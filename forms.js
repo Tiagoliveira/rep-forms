@@ -18,6 +18,9 @@
 //      columns:[{name, w, type?:'num'|'yn'|'pick', sum?, from?}], density?:[membersCol, staffCol] }
 //      type 'pick' + from:'<table label>' = dropdown of names typed in that table's first column
 //    { label, type:'sketch', height }   – dotted box on the printout for drawing by hand
+//  Column extras: group (shared heading above columns, e.g. Shift/Times), options (for 'yn'),
+//  countYes (shows "x of y joined"). Table extras: printRows (blank rows on paper), rowHeight (mm).
+//  Form extras: layout:'landscape', plain:true (print as title + one big table).
 //  `headerTitle` renames the "Case details" panel on screen.
 // ─────────────────────────────────────────────────────────────
 window.FORMS = [
@@ -173,6 +176,31 @@ window.FORMS = [
         { label: 'Top issues raised by staff', lines: 2 },
         { label: 'Departments or shifts with low membership', lines: 2 },
         { label: 'Actions, who will do them and by when', lines: 3 },
+      ]},
+    ],
+  },
+  {
+    id: 'recruitment-planner',
+    title: 'Recruitment Planner',
+    org: 'USDAW Education',
+    description: 'Colleagues, their shifts across the week, and whether they’ve joined.',
+    layout: 'landscape',
+    plain: true,
+    header: [],
+    sections: [
+      { title: 'Colleagues', sub: 'Who to approach and when they’re in', rows: [
+        { label: 'Colleagues', type: 'table', item: 'Colleague', rows: 40, start: 1, printRows: 8, rowHeight: 19.5, columns: [
+          { name: 'Colleague name', w: 19 },
+          { name: 'Mon', group: 'Shift/Times', w: 7.5 },
+          { name: 'Tues', group: 'Shift/Times', w: 7.5 },
+          { name: 'Wed', group: 'Shift/Times', w: 7.5 },
+          { name: 'Thu', group: 'Shift/Times', w: 7.5 },
+          { name: 'Fri', group: 'Shift/Times', w: 7.5 },
+          { name: 'Sat', group: 'Shift/Times', w: 7.5 },
+          { name: 'Sun', group: 'Shift/Times', w: 7.5 },
+          { name: 'Joined Y/N', type: 'yn', options: ['Yes', 'No'], countYes: true, w: 8 },
+          { name: 'Comments', w: 20.5 },
+        ]},
       ]},
     ],
   },

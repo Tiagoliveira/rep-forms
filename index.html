@@ -198,6 +198,16 @@ html.previewing .formview{padding-bottom:0}
 .sheet table.grid td.n{text-align:right;font-variant-numeric:tabular-nums}
 .sheet table.grid tr.tot td{background:var(--label);font-weight:700}
 .sheet td.full.sketch{background-color:#fff;background-image:radial-gradient(#b9c6ce 0.6px,transparent 0.7px);background-size:5mm 5mm}
+.sheet table.grid th.grp{text-align:center;font-size:9pt;letter-spacing:.04em}
+.sheet table.grid th.sub{text-align:center}
+.sheet table.grid thead{display:table-header-group}
+.sheet.plain{font-size:10pt}
+.sheet.land{width:297mm;min-width:297mm}
+.sheet .ptitle{font-size:20pt;letter-spacing:.06em;text-transform:uppercase;margin:0 0 6mm;font-weight:800;font-stretch:condensed}
+.sheet.plain table.grid th{background:#fff;border:1.2px solid #222;text-transform:uppercase;font-size:8.5pt;vertical-align:bottom}
+.sheet.plain table.grid{width:99%}
+.sheet.plain table.grid td{background:#fff;border:1.2px solid #222;vertical-align:top}
+.sheet .pfoot{margin-top:5mm}
 .printroot{display:none}
 
 @media print{
@@ -206,6 +216,7 @@ html.previewing .formview{padding-bottom:0}
   .bar,.banners,.home,.formview{display:none!important}
   .printroot{display:block!important}
   .sheet{width:auto;min-width:0;padding:0;margin:0}
+  .sheet.land{width:auto;min-width:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -313,7 +324,10 @@ function tableTotals(k, r, upto) {
   r.columns.forEach((c, ci) => { if (c.sum) { sums[ci] = 0; for (let i = 0; i < upto; i++) sums[ci] += numVal(state[`${k}_${i}_${ci}`]); } });
   let density = null;
   if (r.density) { const [m, t] = r.density; density = sums[t] ? Math.round(sums[m] / sums[t] * 100) : null; }
-  return {sums, density};
+  const yes = {};
+  r.columns.forEach((c, ci) => { if (c.countYes) { yes[ci] = 0; for (let i = 0; i < upto; i++) if (state[`${k}_${i}_${ci}`] === 'Yes') yes[ci]++; } });
+  let named = 0; for (let i = 0; i < upto; i++) if ((state[`${k}_${i}_0`] || '').trim()) named++;
+  return {sums, density, yes, named};
 }
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
 
@@ -342,7 +356,7 @@ function renderFill(form) {
     return `<div class="fld"><label for="${id}">${esc(l)}</label>
       <input class="inp" id="${id}" data-k="${id}" type="${isDate(l) ? 'date' : 'text'}" autocomplete="off"></div>`;
   }).join('');
-  let html = `<section class="panel"><div class="phead"><div><h3>${esc(form.headerTitle || 'Case details')}</h3></div></div><div class="pbody"><div class="grid2">${hdr}</div></div></section>`;
+  let html = hdr ? `<section class="panel"><div class="phead"><div><h3>${esc(form.headerTitle || 'Case details')}</h3></div></div><div class="pbody"><div class="grid2">${hdr}</div></div></section>` : '';
   form.sections.forEach((s, si) => {
     const rows = s.rows.map((r, ri) => {
       const k = `s${si}r${ri}`;
@@ -356,12 +370,12 @@ function renderFill(form) {
             const ctl = c.type === 'pick'
               ? `<select class="inp" id="${id}" data-k="${id}" data-pick="${esc(c.from)}"></select>`
               : c.type === 'yn'
-              ? `<select class="inp" id="${id}" data-k="${id}"><option value="">Choose…</option><option>Yes</option><option>No</option><option>Unsure</option></select>`
+              ? `<select class="inp" id="${id}" data-k="${id}"><option value="">Choose…</option>${(c.options || ['Yes', 'No', 'Unsure']).map(o => `<option>${esc(o)}</option>`).join('')}</select>`
               : `<input class="inp" id="${id}" data-k="${id}" ${c.type === 'num' ? 'type="number" inputmode="numeric" min="0"' : 'type="text"'} autocomplete="off">`;
             return `<div class="fld"><label for="${id}">${esc(c.name)}</label>${ctl}</div>`;
           }).join('')}</div></div>`).join('');
         const add = n < (r.rows || 8) ? `<button type="button" class="addrow" data-add="${k}" data-n="${n}">+ Add ${esc((r.item || 'row').toLowerCase())}</button>` : '';
-        const tot = r.columns.some(c => c.sum) ? `<div class="totals" data-tot="${k}" data-si="${si}" data-ri="${ri}"></div>` : '';
+        const tot = r.columns.some(c => c.sum || c.countYes) ? `<div class="totals" data-tot="${k}" data-si="${si}" data-ri="${ri}"></div>` : '';
         return `<div class="entries">${entries}${add}${tot}</div>`;
       }
       if (r.type === 'sketch') return `<div class="sketchnote"><span class="pad"></span><span>The printout leaves a dotted box here to sketch the layout by hand: departments, entrances, break room, notice board.</span></div>`;
@@ -400,8 +414,9 @@ function refreshPicks(form = FORMS.find(f => f.id === current)) {
 function updateTotals(form = FORMS.find(f => f.id === current)) {
   document.querySelectorAll('#fill [data-tot]').forEach(el => {
     const r = form.sections[+el.dataset.si].rows[+el.dataset.ri], k = el.dataset.tot;
-    const {sums, density} = tableTotals(k, r, r.rows || 8);
-    el.innerHTML = Object.entries(sums).map(([ci, v]) => `<span class="stat"><b>${v}</b>${esc(r.columns[ci].name.toLowerCase())}</span>`).join('')
+    const {sums, density, yes, named} = tableTotals(k, r, r.rows || 8);
+    el.innerHTML = Object.values(yes).map(y => `<span class="stat"><b>${y} of ${named}</b>joined</span>`).join('')
+      + Object.entries(sums).map(([ci, v]) => `<span class="stat"><b>${v}</b>${esc(r.columns[ci].name.toLowerCase())}</span>`).join('')
       + (r.density ? `<span class="stat"><b>${density == null ? '–' : density + '%'}</b>membership density</span>` : '');
   });
 }
@@ -411,7 +426,7 @@ $('#fill').addEventListener('input', e => {
   if (el.tagName === 'TEXTAREA') grow(el);
   if (el.type === 'checkbox') updateProgress();
   if (el.type === 'number') updateTotals();
-  if (el.closest('.entries') && el.tagName === 'INPUT') refreshPicks();
+  if (el.closest('.entries')) { if (el.tagName === 'INPUT') refreshPicks(); updateTotals(); }
   dirty = true;
 });
 $('#fill').addEventListener('click', e => {
@@ -444,8 +459,39 @@ function renderChecklistSheet(form) {
   const fin = form.final ? `<table class="sec"><tr><td class="fin">${esc(form.final)}</td></tr></table>` : '';
   return `<div class="sheet ck"><div class="s-head"><h2>${esc(form.title)}</h2>${logoFor(form)}</div>${intro}${secs}${fin}</div>`;
 }
+function printGrid(k, r) {
+  const v = key => esc(state[key] || '');
+  const used = Array.from({length: r.rows || 8}, (_, i) => r.columns.some((c, ci) => state[`${k}_${i}_${ci}`])).lastIndexOf(true) + 1;
+  const n = Math.max(r.printRows ?? r.rows ?? 8, used);
+  const grouped = r.columns.some(c => c.group);
+  let head;
+  if (grouped) {
+    let top = '', i = 0;
+    while (i < r.columns.length) {
+      const g = r.columns[i].group;
+      if (!g) { top += `<th rowspan="2">${esc(r.columns[i].name)}</th>`; i++; continue; }
+      let span = 0; while (i + span < r.columns.length && r.columns[i + span].group === g) span++;
+      top += `<th colspan="${span}" class="grp">${esc(g)}</th>`; i += span;
+    }
+    head = `<tr>${top}</tr><tr>${r.columns.filter(c => c.group).map(c => `<th class="sub">${esc(c.name)}</th>`).join('')}</tr>`;
+  } else head = `<tr>${r.columns.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr>`;
+  const rh = r.rowHeight ? ` style="height:${r.rowHeight}mm"` : '';
+  const body = Array.from({length: n}, (_, i) => `<tr${rh}>${r.columns.map((c, ci) => `<td class="${c.type === 'num' ? 'n' : ''}">${v(`${k}_${i}_${ci}`)}</td>`).join('')}</tr>`).join('');
+  let tot = '';
+  if (r.columns.some(c => c.sum)) {
+    const {sums, density} = tableTotals(k, r, n), any = used > 0;
+    tot = `<tr class="tot">${r.columns.map((c, ci) => `<td class="${c.sum ? 'n' : ''}">${ci === 0 ? 'Total' + (r.density ? ` · density ${any && density != null ? density + '%' : '____%'}` : '') : (c.sum && any ? sums[ci] : '')}</td>`).join('')}</tr>`;
+  }
+  return `<table class="grid"><colgroup>${r.columns.map(c => `<col style="width:${c.w || 15}%">`).join('')}</colgroup><thead>${head}</thead><tbody>${body}${tot}</tbody></table>`;
+}
+/* a form that is just one big table (e.g. the recruitment planner) */
+function renderPlainSheet(form) {
+  const r = form.sections[0].rows[0];
+  return `<div class="sheet plain${form.layout === 'landscape' ? ' land' : ''}"><h2 class="ptitle">${esc(form.title)}</h2>${printGrid('s0r0', r)}<div class="pfoot">${logoFor(form)}</div></div>`;
+}
 function renderSheet(form) {
   if (form.kind === 'checklist') return renderChecklistSheet(form);
+  if (form.plain) return renderPlainSheet(form);
   const v = k => esc(state[k] || '');
   const hdrCells = (form.header || []).map((row, ri) => `<tr>${row.map((l, ci) => {
     const k = `h${ri * row.length + ci}`;
@@ -456,18 +502,7 @@ function renderSheet(form) {
     const rows = s.rows.map((r, ri) => {
       const k = `s${si}r${ri}`, h = `min-height:${((r.lines || 2) * lineH + 2).toFixed(1)}mm`;
       let body;
-      if (r.type === 'table') {
-        const used = Array.from({length: r.rows || 8}, (_, i) => r.columns.some((c, ci) => state[`${k}_${i}_${ci}`])).lastIndexOf(true) + 1;
-        const n = Math.max(r.rows || 8, used);
-        const head = `<tr>${r.columns.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr>`;
-        const body = Array.from({length: n}, (_, i) => `<tr>${r.columns.map((c, ci) => `<td class="${c.type === 'num' ? 'n' : ''}">${v(`${k}_${i}_${ci}`)}</td>`).join('')}</tr>`).join('');
-        let tot = '';
-        if (r.columns.some(c => c.sum)) {
-          const {sums, density} = tableTotals(k, r, n), any = used > 0;
-          tot = `<tr class="tot">${r.columns.map((c, ci) => `<td class="${c.sum ? 'n' : ''}">${ci === 0 ? 'Total' + (r.density ? ` · density ${any && density != null ? density + '%' : '____%'}` : '') : (c.sum && any ? sums[ci] : '')}</td>`).join('')}</tr>`;
-        }
-        return `<tr><td class="full" colspan="2"><table class="grid"><colgroup>${r.columns.map(c => `<col style="width:${c.w || 15}%">`).join('')}</colgroup>${head}${body}${tot}</table></td></tr>`;
-      }
+      if (r.type === 'table') return `<tr><td class="full" colspan="2">${printGrid(k, r)}</td></tr>`;
       if (r.type === 'sketch') return `<tr><td class="full sketch" colspan="2"><div style="height:${r.height || 70}mm"></div></td></tr>`;
       if (r.type === 'checks') {
         body = `<div class="opts">${r.options.map((o, oi) => `<span><span class="box${state[`${k}o${oi}`] ? ' on' : ''}"></span>${esc(o)}</span>`).join('')}${
@@ -486,7 +521,12 @@ function renderSheet(form) {
   return `<div class="sheet"><div class="s-head"><h2>${esc(form.title)}</h2>${logo}</div>
     <table class="hdr"><colgroup><col style="width:22%"><col style="width:22%"><col style="width:22%"><col style="width:34%"></colgroup>${hdrCells}</table>${secs}</div>`;
 }
-const refreshPrint = () => { const f = FORMS.find(f => f.id === current); if (f) $('#printroot').innerHTML = renderSheet(f); };
+function setPageSize(f) {
+  let el = document.getElementById('pagesize');
+  if (!el) { el = document.createElement('style'); el.id = 'pagesize'; document.head.appendChild(el); }
+  el.textContent = `@media print{@page{size:A4 ${f && f.layout === 'landscape' ? 'landscape' : 'portrait'};margin:8mm}}`;
+}
+const refreshPrint = () => { const f = FORMS.find(f => f.id === current); setPageSize(f); if (f) $('#printroot').innerHTML = renderSheet(f); };
 window.addEventListener('beforeprint', refreshPrint);
 
 function setView(prev) {
@@ -547,6 +587,7 @@ function show() {
   if (!form) document.documentElement.classList.remove('previewing');
   if (form) {
     if (current !== form.id) { state = {}; dirty = false; current = form.id; renderFill(form); setView(false); }
+    setPageSize(form);
     $('#fOrg').textContent = form.org || ''; $('#fTitle').textContent = form.title;
     $('#barTitle').firstChild.textContent = form.title.split(' – ')[0];
     document.title = form.title + ' · Rep Forms';
