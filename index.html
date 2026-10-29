@@ -9,56 +9,54 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-/* Layout: two views. Home = a shelf of form cards drawn like mini paper sheets.
-   Form = slim toolbar (Back · title · Clear · Print) over a centred A4 sheet. Paper stays light in both themes. */
+/* Layout: Home = shelf of form cards. Form = app-style filling view (stacked cards, auto-growing boxes)
+   with a "Print preview" toggle. The printed page is a separate render that copies the original paper layout. */
 :root{
-  --bg:#e9eef1; --surface:#ffffff; --fg:#17232c; --muted:#5a6a74; --line:#cfd8de;
-  --bar:#1d2b36; --bar-fg:#f1f5f7; --accent:#2f6f95; --accent-fg:#ffffff; --accent-soft:#dbe9f2;
+  --bg:#e9eef1; --surface:#ffffff; --surface-2:#f4f7f9; --fg:#17232c; --muted:#5a6a74; --line:#cfd8de; --line-strong:#a9b8c1;
+  --bar:#1d2b36; --bar-fg:#f1f5f7; --accent:#2f6f95; --accent-fg:#ffffff; --accent-soft:#dbe9f2; --focus:#2f6f9533;
   --paper:#ffffff; --ink:#1b1b1b; --label:#c9dce8; --field:#eef5f9; --band:#2b2b2b; --rule:#7a8a96;
   --ui:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
-  --r:12px;
+  --r:14px;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#11181d; --surface:#1a242b; --fg:#e4ebef; --muted:#97a8b2; --line:#2c3a43;
-  --bar:#0c1216; --accent:#7fb7d9; --accent-fg:#0c1216; --accent-soft:#1f3443; color-scheme:dark}}
+  --bg:#11181d; --surface:#1a242b; --surface-2:#141d23; --fg:#e4ebef; --muted:#97a8b2; --line:#2c3a43; --line-strong:#41525d;
+  --bar:#0c1216; --accent:#7fb7d9; --accent-fg:#0c1216; --accent-soft:#1f3443; --focus:#7fb7d940; color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--ui);min-height:100vh;-webkit-tap-highlight-color:transparent}
 button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;min-height:44px}
-button:focus-visible,[contenteditable]:focus-visible,a:focus-visible,.card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* top bar */
 .bar{position:sticky;top:0;z-index:5;background:var(--bar);color:var(--bar-fg);padding-top:env(safe-area-inset-top,0px);box-shadow:0 1px 0 #0003}
-.bar-in{display:flex;align-items:center;gap:8px;min-height:56px;max-width:1000px;margin:0 auto}
-.bar h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-in{display:flex;align-items:center;gap:6px;min-height:56px;max-width:1000px;margin:0 auto}
+.bar h1{font-size:18px;margin:0;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .ver{font-size:12px;opacity:.55;font-weight:400;margin-left:6px}
 .ib{background:transparent;color:var(--bar-fg);display:inline-flex;align-items:center;gap:6px;padding:8px 10px}
 .ib:hover{background:#ffffff14}
-.ib svg{width:22px;height:22px;flex:none}
+.ib svg,.pri svg{width:21px;height:21px;flex:none}
 .pri{background:var(--bar-fg);color:var(--bar);font-weight:650;display:inline-flex;align-items:center;gap:8px}
-.pri svg{width:20px;height:20px}
-@media (max-width:520px){.lbl{display:none}.pri{padding:10px 12px}}
+@media (max-width:560px){.lbl{display:none}.pri{padding:10px 12px}}
 
 /* home */
 .home{max-width:1000px;margin:0 auto;padding-block:28px 56px}
 .home h2{font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
-.home .lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
+.lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
 .shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
-.card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-  display:flex;flex-direction:column;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 28px #0000001f}
 .thumb{background:var(--accent-soft);padding:18px 22px 0;height:150px;overflow:hidden}
 .mini{background:#fff;height:100%;border-radius:4px 4px 0 0;box-shadow:0 2px 10px #0000002a;padding:12px 12px 0;display:flex;flex-direction:column;gap:5px}
 .mini i{display:block;height:6px;border-radius:2px;background:#2b2b2b}
-.mini .t{width:70%;height:7px;background:#1b1b1b;margin-bottom:4px}
+.mini .t{width:70%;height:7px;margin-bottom:4px}
 .mini .r{display:grid;grid-template-columns:1fr 2fr;gap:3px}
 .mini .r span{height:11px;background:#c9dce8}
 .mini .r span+span{background:#eef5f9;border:1px solid #d5e0e7}
 .mini .n{height:56px;background:#eef5f9;border:1px solid #d5e0e7}
 .cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
-.cbody .org{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .cbody h3{margin:0;font-size:17px;line-height:1.25;text-wrap:balance}
 .cbody p{margin:2px 0 0;color:var(--muted);font-size:14px}
 .cbody .go{margin-top:auto;padding-top:10px;color:var(--accent);font-weight:600;font-size:14px}
@@ -73,49 +71,80 @@ button:focus-visible,[contenteditable]:focus-visible,a:focus-visible,.card:focus
 .banner button{background:var(--accent);color:var(--accent-fg);font-weight:600;min-height:40px}
 .banner button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 
-/* form view */
-.formview{padding-block:16px 56px;overflow-x:auto}
-.hint{max-width:210mm;margin:0 auto 10px;font-size:13px;color:var(--muted)}
+/* ── form view (screen) ── */
+.formview{max-width:760px;margin:0 auto;padding-block:16px 72px}
+.ftop{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+.ftop h2{margin:2px 0 0;font-size:24px;line-height:1.2;text-wrap:balance}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{min-height:38px;padding:6px 14px;background:transparent;color:var(--muted);font-size:14px;font-weight:600;border-radius:9px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.phead{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.step{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:15px;flex:none}
+.phead h3{margin:0;font-size:17px;line-height:1.2}
+.phead p{margin:1px 0 0;font-size:13px;color:var(--muted)}
+.pbody{padding:6px 18px 18px;display:flex;flex-direction:column;gap:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;padding-top:12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>label,.fld>.q{font-weight:600;font-size:15px;line-height:1.3}
+.fld:first-child{padding-top:12px}
+.grid2 .fld{padding-top:0}
+.inp{font:inherit;color:var(--fg);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:11px 12px;width:100%;min-height:46px;transition:border-color .12s,box-shadow .12s,background .12s}
+.inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--focus);background:var(--surface)}
+textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
+.inp::placeholder{color:var(--muted);opacity:.8}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--fg);border-radius:999px;padding:7px 12px;min-height:38px;font-size:14px;cursor:pointer;user-select:none}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip .tick{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line-strong);display:grid;place-items:center;flex:none}
+.chip:has(input:checked){background:var(--accent-soft);border-color:var(--accent)}
+.chip:has(input:checked) .tick{background:var(--accent);border-color:var(--accent)}
+.chip:has(input:checked) .tick::after{content:"";width:8px;height:4px;border:2px solid var(--accent-fg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.chip:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.hintrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hintrow small{color:var(--muted);font-size:12px;margin-right:2px}
+.hintbtn{min-height:32px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--fg);font-size:13px}
+.sub{font-size:13px;color:var(--muted)}
 
-/* ── the paper ── */
-.sheet{background:var(--paper);color:var(--ink);width:210mm;max-width:100%;margin:0 auto;padding:12mm 11mm;border-radius:3px;
-  box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;font:10pt/1.35 Arial,Helvetica,sans-serif;color-scheme:light}
-.s-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap}
-.s-head h2{font-size:15pt;margin:0;text-transform:uppercase;letter-spacing:.01em}
-.s-head .org{font-weight:700;font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:#444;white-space:nowrap}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-td{border:1px solid var(--rule);vertical-align:top;padding:5px 7px}
-td.l{background:var(--label);font-weight:700}
-td.v{background:var(--field)}
-.hdr,.sec{margin-bottom:10px}
-.band td{background:var(--band);color:#fff;padding:6px 9px;border-color:var(--band)}
-.band b{font-size:12pt;text-transform:uppercase;margin-right:8px}
-.band span{font-size:9pt}
-tr{break-inside:avoid}
-.hints{font-weight:400;font-style:italic;margin-top:6px;font-size:9pt;line-height:1.45}
-.f{min-height:1.5em;outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;border-radius:2px}
-.f:focus{background:#fffbe6}
-.checks{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:6px}
-.checks label{display:flex;gap:6px;align-items:center;cursor:pointer}
-.checks input{width:16px;height:16px;margin:0;accent-color:#2b2b2b}
-.other{display:flex;gap:6px;align-items:baseline;margin-bottom:6px}
-.other .f{flex:1;border-bottom:1px solid var(--rule);min-height:1.3em}
+/* preview wrapper */
+.preview{overflow-x:auto;padding-bottom:8px}
+.preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
 
-@media (max-width:640px){
-  .sheet{padding:14px 10px}
-  .sec col:first-child{width:40%!important}
-  .hdr colgroup{display:none}
-  .hdr tr{display:flex;flex-wrap:wrap}
-  .hdr td{flex:1 1 40%}
-  .hdr td.v{flex-basis:60%}
-}
+/* ── the printed page: copies the original paper layout ── */
+.sheet{background:var(--paper);color:var(--ink);width:210mm;min-width:210mm;margin:0 auto;padding:10mm 10mm;font:9.5pt/1.3 Arial,Helvetica,sans-serif;color-scheme:light}
+.s-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:0 0 5px 30mm}
+.s-head h2{font-size:13pt;margin:0;text-transform:uppercase;letter-spacing:.01em;font-weight:700}
+.logo{display:flex;align-items:center;gap:5px;line-height:1}
+.logo b{display:block;font-size:13pt;letter-spacing:.02em}
+.logo small{display:block;font-size:5.5pt;letter-spacing:.32em;font-weight:700}
+.sheet table{width:100%;border-collapse:collapse;table-layout:fixed}
+.sheet td{border:1px solid var(--rule);vertical-align:top;padding:4px 6px}
+.sheet td.l{background:var(--label);font-weight:700}
+.sheet td.v{background:var(--field);white-space:pre-wrap;word-wrap:break-word}
+.sheet .hdr{margin-bottom:9px}
+.sheet .sec{margin-bottom:0}
+.sheet .sec+.sec .band td{border-top:0}
+.sheet .band td{background:var(--band);color:#fff;padding:5px 8px;border-color:var(--band)}
+.sheet .band b{font-size:11pt;text-transform:uppercase;margin-right:8px}
+.sheet .band span{font-size:8.5pt}
+.sheet tr{break-inside:avoid}
+.sheet .hints{font-weight:400;font-style:italic;margin-top:8px;line-height:1.35}
+.sheet .opts{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:8.5pt;margin-bottom:3px}
+.sheet .box{display:inline-block;width:9px;height:9px;border:1px solid #333;margin-right:4px;vertical-align:-1px;position:relative}
+.sheet .box.on::after{content:"✓";position:absolute;left:0;top:-4px;font-size:10px;font-weight:700}
+.sheet .oth{font-size:8.5pt}
+.sheet .oth u{text-decoration:none;border-bottom:1px solid #333;display:inline-block;min-width:60mm;padding:0 3px}
+.sheet .val{white-space:pre-wrap}
+.printroot{display:none}
+
 @media print{
-  @page{size:A4;margin:10mm}
+  @page{size:A4;margin:8mm}
   body{background:#fff}
-  .bar,.banners,.hint,.home{display:none!important}
-  .formview{padding:0;overflow:visible}
-  .sheet{width:auto;padding:0;box-shadow:none;margin:0;border-radius:0}
-  .f:focus{background:none}
+  .bar,.banners,.home,.formview{display:none!important}
+  .printroot{display:block!important}
+  .sheet{width:auto;min-width:0;padding:0;margin:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -161,17 +190,24 @@ tr{break-inside:avoid}
 </main>
 
 <main id="formview" class="formview gut" hidden>
-  <p class="hint">Tap any box to type. Use Print / PDF when you’re done.</p>
-  <div class="sheet" id="sheet"></div>
+  <div class="ftop">
+    <div><div class="eyebrow" id="fOrg"></div><h2 id="fTitle"></h2></div>
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" id="vFill" aria-pressed="true">Fill in</button>
+      <button type="button" id="vPrev" aria-pressed="false">Print preview</button>
+    </div>
+  </div>
+  <div id="fill" class="stack"></div>
+  <div id="preview" class="preview" hidden></div>
 </main>
+
+<div class="printroot" id="printroot"></div>
 
 <script src="forms.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const field = (name, lines = 1) =>
-  `<div class="f" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(name)}" style="min-height:${(lines*1.45).toFixed(2)}em"></div>`;
-let dirty = false, current = null;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let state = {}, dirty = false, current = null;
 
 /* ── in-page confirm ── */
 function ask(msg, yesLabel = 'Continue') {
@@ -186,62 +222,127 @@ function ask(msg, yesLabel = 'Continue') {
 /* ── home shelf ── */
 function thumb(f) {
   const rows = f.sections.flatMap(s => s.rows).slice(0, 5);
-  const big = rows.length === 1;
   return `<div class="thumb"><div class="mini"><i class="t"></i><div class="r"><span></span><span></span></div><i></i>${
-    big ? '<div class="n"></div>' : rows.map(() => '<div class="r"><span></span><span></span></div>').join('')}</div></div>`;
+    rows.length === 1 ? '<div class="n"></div>' : rows.map(() => '<div class="r"><span></span><span></span></div>').join('')}</div></div>`;
 }
 $('#shelf').innerHTML = FORMS.map(f => `
-  <a class="card" href="#${esc(f.id)}">
-    ${thumb(f)}
-    <div class="cbody">
-      ${f.org ? `<div class="org">${esc(f.org)}</div>` : ''}
-      <h3>${esc(f.title)}</h3>
-      ${f.description ? `<p>${esc(f.description)}</p>` : ''}
-      <div class="go">Open form →</div>
-    </div>
-  </a>`).join('');
+  <a class="card" href="#${esc(f.id)}">${thumb(f)}
+    <div class="cbody">${f.org ? `<div class="eyebrow">${esc(f.org)}</div>` : ''}
+      <h3>${esc(f.title)}</h3>${f.description ? `<p>${esc(f.description)}</p>` : ''}
+      <div class="go">Open form →</div></div></a>`).join('');
 
-/* ── form sheet ── */
-function render(form) {
-  const hdr = form.header.map(r => `<tr>${r.map(l => `<td class="l">${esc(l)}</td><td class="v">${field(l)}</td>`).join('')}</tr>`).join('');
-  const secs = form.sections.map(s => {
-    const rows = s.rows.map(r => {
+/* ── helpers ── */
+const isDate = l => /^date\b/i.test(l);
+const fmtDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : (v || ''); };
+const isSingleNotes = (s, r) => s.rows.length === 1 && r.label === s.title;
+function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+
+/* ── screen: app-style form ── */
+function renderFill(form) {
+  const hdr = form.header.flat().map((l, i) => {
+    const id = `h${i}`;
+    return `<div class="fld"><label for="${id}">${esc(l)}</label>
+      <input class="inp" id="${id}" data-k="${id}" type="${isDate(l) ? 'date' : 'text'}" autocomplete="off"></div>`;
+  }).join('');
+  let html = `<section class="panel"><div class="phead"><div><h3>Case details</h3></div></div><div class="pbody"><div class="grid2">${hdr}</div></div></section>`;
+  form.sections.forEach((s, si) => {
+    const rows = s.rows.map((r, ri) => {
+      const k = `s${si}r${ri}`;
+      const rowsAttr = Math.max(2, Math.min(r.lines || 2, 10));
+      const ta = `<textarea class="inp" id="${k}" data-k="${k}" rows="${rowsAttr}" placeholder="${r.type === 'checks' ? 'References and notes' : 'Type here…'}"></textarea>`;
+      if (r.type === 'checks') {
+        const chips = r.options.map((o, oi) => `<label class="chip"><input type="checkbox" data-k="${k}o${oi}"><span class="tick"></span>${esc(o)}</label>`).join('');
+        const other = r.other ? `<input class="inp" data-k="${k}x" aria-label="Other document" placeholder="Other document…">` : '';
+        return `<div class="fld"><div class="q">${esc(r.label)}</div><div class="chips">${chips}</div>${other}${ta}</div>`;
+      }
+      const hints = r.hints ? `<div class="hintrow"><small>Tap to add a heading:</small>${r.hints.map(h => `<button type="button" class="hintbtn" data-for="${k}">${esc(h)}</button>`).join('')}</div>` : '';
+      const lab = isSingleNotes(s, r) ? '' : `<label for="${k}">${esc(r.label)}</label>`;
+      return `<div class="fld">${lab}${hints}${ta}</div>`;
+    }).join('');
+    html += `<section class="panel"><div class="phead">${s.num ? `<div class="step">${s.num}</div>` : ''}<div><h3>${esc(s.title)}</h3>${s.sub ? `<p>${esc(s.sub)}</p>` : ''}</div></div><div class="pbody">${rows}</div></section>`;
+  });
+  $('#fill').innerHTML = html;
+  $('#fill').querySelectorAll('[data-k]').forEach(el => {
+    const v = state[el.dataset.k];
+    if (el.type === 'checkbox') el.checked = !!v; else if (v != null) el.value = v;
+    if (el.tagName === 'TEXTAREA') grow(el);
+  });
+}
+$('#fill').addEventListener('input', e => {
+  const el = e.target; if (!el.dataset.k) return;
+  state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+  if (el.tagName === 'TEXTAREA') grow(el);
+  dirty = true;
+});
+$('#fill').addEventListener('click', e => {
+  const b = e.target.closest('.hintbtn'); if (!b) return;
+  const t = document.getElementById(b.dataset.for);
+  const pre = t.value && !t.value.endsWith('\n') ? '\n' : '';
+  t.value += `${pre}${b.textContent}: `;
+  t.dispatchEvent(new Event('input', {bubbles: true}));
+  t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+});
+window.addEventListener('resize', () => document.querySelectorAll('#fill textarea').forEach(grow));
+
+/* ── print: copy of the original paper form ── */
+function renderSheet(form) {
+  const v = k => esc(state[k] || '');
+  const hdrCells = form.header.map((row, ri) => `<tr>${row.map((l, ci) => {
+    const k = `h${ri * row.length + ci}`;
+    return `<td class="l">${esc(l)}</td><td class="v">${isDate(l) ? esc(fmtDate(state[k])) : v(k)}</td>`;
+  }).join('')}</tr>`).join('');
+  const lineH = 1.3 * 9.5 * 0.3528; // mm per line
+  const secs = form.sections.map((s, si) => {
+    const rows = s.rows.map((r, ri) => {
+      const k = `s${si}r${ri}`, h = `min-height:${((r.lines || 2) * lineH + 2).toFixed(1)}mm`;
       let body;
       if (r.type === 'checks') {
-        body = `<div class="checks">${r.options.map(o => `<label><input type="checkbox"> ${esc(o)}</label>`).join('')}</div>`
-             + (r.other ? `<div class="other">Other: ${field('Other')}</div>` : '')
-             + field(r.label, Math.max(1, (r.lines || 2) - 1));
-      } else body = field(r.label, r.lines || 2);
+        body = `<div class="opts">${r.options.map((o, oi) => `<span><span class="box${state[`${k}o${oi}`] ? ' on' : ''}"></span>${esc(o)}</span>`).join('')}${
+          r.other ? `<span class="oth"><span class="box${state[k + 'x'] ? ' on' : ''}"></span>Other: <u>${v(k + 'x')}</u></span>` : ''}</div><div class="val">${v(k)}</div>`;
+      } else body = `<div class="val">${v(k)}</div>`;
       const hints = r.hints ? `<div class="hints">${r.hints.map(esc).join('<br>')}</div>` : '';
-      return (s.rows.length === 1 && r.label === s.title)
-        ? `<tr><td class="v" colspan="2">${body}</td></tr>`
-        : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v">${body}</td></tr>`;
+      return isSingleNotes(s, r)
+        ? `<tr><td class="v" colspan="2"><div style="${h}">${body}</div></td></tr>`
+        : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v"><div style="${h}">${body}</div></td></tr>`;
     }).join('');
     const band = `<tr class="band"><td colspan="2"><b>${s.num ? s.num + '. ' : ''}${esc(s.title)}</b><span>${esc(s.sub || '')}</span></td></tr>`;
-    return `<table class="sec"><colgroup><col style="width:33%"><col></colgroup>${band}${rows}</table>`;
+    return `<table class="sec"><colgroup><col style="width:28%"><col></colgroup>${band}${rows}</table>`;
   }).join('');
-  $('#sheet').innerHTML =
-    `<div class="s-head"><h2>${esc(form.title)}</h2>${form.org ? `<div class="org">${esc(form.org)}</div>` : ''}</div>
-     <table class="hdr"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col style="width:32%"></colgroup>${hdr}</table>${secs}`;
-  dirty = false;
+  const logo = form.org ? `<div class="logo"><span><b>${esc(form.org.split(' ')[0])}</b><small>${esc(form.org.split(' ').slice(1).join(' '))}</small></span></div>` : '';
+  return `<div class="sheet"><div class="s-head"><h2>${esc(form.title)}</h2>${logo}</div>
+    <table class="hdr"><colgroup><col style="width:22%"><col style="width:22%"><col style="width:22%"><col style="width:34%"></colgroup>${hdrCells}</table>${secs}</div>`;
 }
+const refreshPrint = () => { const f = FORMS.find(f => f.id === current); if (f) $('#printroot').innerHTML = renderSheet(f); };
+window.addEventListener('beforeprint', refreshPrint);
 
-/* ── routing: #form-id opens a form, no hash shows the shelf ── */
+function setView(prev) {
+  $('#vFill').setAttribute('aria-pressed', !prev); $('#vPrev').setAttribute('aria-pressed', prev);
+  $('#fill').hidden = prev; $('#preview').hidden = !prev;
+  if (prev) { $('#preview').innerHTML = renderSheet(FORMS.find(f => f.id === current)); fitPreview(); }
+  else $('#fill').querySelectorAll('textarea').forEach(grow);
+}
+function fitPreview() {
+  const sh = $('#preview .sheet'); if (!sh) return;
+  sh.style.zoom = 1; const z = Math.min(1, $('#preview').clientWidth / sh.offsetWidth); sh.style.zoom = z;
+}
+window.addEventListener('resize', fitPreview);
+$('#vFill').onclick = () => setView(false);
+$('#vPrev').onclick = () => setView(true);
+
+/* ── routing ── */
 function show() {
   const form = FORMS.find(f => f.id === location.hash.slice(1));
-  const onForm = !!form;
-  $('#home').hidden = onForm; $('#formview').hidden = !onForm;
-  ['#back', '#clear', '#print'].forEach(s => $(s).hidden = !onForm);
+  $('#home').hidden = !!form; $('#formview').hidden = !form;
+  ['#back', '#clear', '#print'].forEach(s => $(s).hidden = !form);
   $('#confirmBox').hidden = true;
-  if (onForm) {
-    if (current !== form.id) render(form);
-    current = form.id;
+  if (form) {
+    if (current !== form.id) { state = {}; dirty = false; current = form.id; renderFill(form); setView(false); }
+    $('#fOrg').textContent = form.org || ''; $('#fTitle').textContent = form.title;
     $('#barTitle').firstChild.textContent = form.title.split(' – ')[0];
     document.title = form.title + ' · Rep Forms';
   } else {
-    current = null; $('#sheet').innerHTML = ''; dirty = false;
-    $('#barTitle').firstChild.textContent = 'Rep Forms';
-    document.title = 'Rep Forms';
+    current = null; state = {}; dirty = false; $('#fill').innerHTML = $('#preview').innerHTML = $('#printroot').innerHTML = '';
+    $('#barTitle').firstChild.textContent = 'Rep Forms'; document.title = 'Rep Forms';
   }
   window.scrollTo({top: 0});
 }
@@ -258,17 +359,11 @@ window.addEventListener('hashchange', async () => {
 show();
 
 $('#back').onclick = () => { location.hash = ''; };
-$('#print').onclick = () => window.print();
+$('#print').onclick = () => { refreshPrint(); window.print(); };
 $('#clear').onclick = async () => {
-  if (!dirty || await ask('Clear everything on this form?', 'Clear')) { const f = current; current = null; location.hash === '#' + f && show(); }
+  if (dirty && !(await ask('Clear everything on this form?', 'Clear'))) return;
+  const f = FORMS.find(f => f.id === current); state = {}; dirty = false; renderFill(f); setView(false);
 };
-$('#sheet').addEventListener('input', () => dirty = true);
-$('#sheet').addEventListener('change', () => dirty = true);
-document.addEventListener('paste', e => {
-  if (!e.target.closest('[contenteditable]')) return;
-  e.preventDefault();
-  document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text'));
-});
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ── offline + opt-in updates ── */
