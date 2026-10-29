@@ -306,7 +306,7 @@ $('#shelf').innerHTML = FORMS.map(f => `
 const isDate = l => /^date\b/i.test(l);
 const fmtDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : (v || ''); };
 const isSingleNotes = (s, r) => s.rows.length === 1 && r.label === s.title;
-const tCount = (k, r) => Math.max(1, Math.min(r.rows || 8, +state[k + 'n'] || Math.min(3, r.rows || 8)));
+const tCount = (k, r) => Math.max(1, Math.min(r.rows || 8, +state[k + 'n'] || (r.start ?? 3)));
 const numVal = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
 function tableTotals(k, r, upto) {
   const sums = {};
@@ -353,8 +353,10 @@ function renderFill(form) {
         const entries = Array.from({length: n}, (_, i) => `<div class="entry"><h4>${esc(r.item || 'Row')} ${i + 1}</h4><div class="egrid">${
           r.columns.map((c, ci) => {
             const id = `${k}_${i}_${ci}`;
-            const ctl = c.type === 'yn'
-              ? `<select class="inp" id="${id}" data-k="${id}"><option value=""></option><option>Yes</option><option>No</option><option>Unsure</option></select>`
+            const ctl = c.type === 'pick'
+              ? `<select class="inp" id="${id}" data-k="${id}" data-pick="${esc(c.from)}"></select>`
+              : c.type === 'yn'
+              ? `<select class="inp" id="${id}" data-k="${id}"><option value="">Choose…</option><option>Yes</option><option>No</option><option>Unsure</option></select>`
               : `<input class="inp" id="${id}" data-k="${id}" ${c.type === 'num' ? 'type="number" inputmode="numeric" min="0"' : 'type="text"'} autocomplete="off">`;
             return `<div class="fld"><label for="${id}">${esc(c.name)}</label>${ctl}</div>`;
           }).join('')}</div></div>`).join('');
@@ -381,6 +383,19 @@ function renderFill(form) {
     if (el.tagName === 'TEXTAREA') grow(el);
   });
   updateTotals(form);
+  refreshPicks(form);
+}
+/* dropdowns that list the names typed into another table (e.g. a person's department) */
+function refreshPicks(form = FORMS.find(f => f.id === current)) {
+  document.querySelectorAll('#fill select[data-pick]').forEach(sel => {
+    let src = null;
+    form.sections.forEach((s, si) => (s.rows || []).forEach((r, ri) => { if (r.type === 'table' && r.label === sel.dataset.pick) src = {k: `s${si}r${ri}`, r}; }));
+    if (!src) return;
+    const names = [...new Set(Array.from({length: src.r.rows || 8}, (_, i) => (state[`${src.k}_${i}_0`] || '').trim()).filter(Boolean))];
+    const cur = state[sel.dataset.k] || '';
+    if (cur && !names.includes(cur)) names.push(cur);
+    sel.innerHTML = `<option value="">${names.length ? 'Choose…' : 'Add a department first'}</option>` + names.map(n => `<option${n === cur ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  });
 }
 function updateTotals(form = FORMS.find(f => f.id === current)) {
   document.querySelectorAll('#fill [data-tot]').forEach(el => {
@@ -396,6 +411,7 @@ $('#fill').addEventListener('input', e => {
   if (el.tagName === 'TEXTAREA') grow(el);
   if (el.type === 'checkbox') updateProgress();
   if (el.type === 'number') updateTotals();
+  if (el.closest('.entries') && el.tagName === 'INPUT') refreshPicks();
   dirty = true;
 });
 $('#fill').addEventListener('click', e => {

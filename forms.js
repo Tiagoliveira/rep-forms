@@ -14,7 +14,9 @@
 //  above the first section, and `final` – a bold closing line.
 //
 //  More row types:
-//    { label, type:'table', item, rows, columns:[{name, w, type?:'num'|'yn', sum?}], density?:[membersCol, staffCol] }
+//    { label, type:'table', item, rows (max), start (entries shown at first),
+//      columns:[{name, w, type?:'num'|'yn'|'pick', sum?, from?}], density?:[membersCol, staffCol] }
+//      type 'pick' + from:'<table label>' = dropdown of names typed in that table's first column
 //    { label, type:'sketch', height }   – dotted box on the printout for drawing by hand
 //  `headerTitle` renames the "Case details" panel on screen.
 // ─────────────────────────────────────────────────────────────
@@ -145,7 +147,7 @@ window.FORMS = [
         { label: 'Notice boards, break areas and best times to talk to staff', lines: 2 },
       ]},
       { num: 2, title: 'Departments', sub: 'Who works where and current membership', rows: [
-        { label: 'Departments', type: 'table', item: 'Department', rows: 8, density: [3, 2], columns: [
+        { label: 'Departments', type: 'table', item: 'Department', rows: 8, start: 1, density: [3, 2], columns: [
           { name: 'Department / area', w: 22 },
           { name: 'Shifts', w: 14 },
           { name: 'Staff', type: 'num', sum: true, w: 8 },
@@ -155,9 +157,9 @@ window.FORMS = [
         ]},
       ]},
       { num: 3, title: 'Key people', sub: 'Reps, activists and people others listen to', rows: [
-        { label: 'People', type: 'table', item: 'Person', rows: 8, columns: [
+        { label: 'People', type: 'table', item: 'Person', rows: 8, start: 1, columns: [
           { name: 'Name', w: 20 },
-          { name: 'Department', w: 16 },
+          { name: 'Department', type: 'pick', from: 'Departments', w: 16 },
           { name: 'Shift', w: 12 },
           { name: 'Member?', type: 'yn', w: 10 },
           { name: 'Role / influence', w: 18 },
