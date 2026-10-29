@@ -1,12 +1,13 @@
 // Bump VERSION whenever any app file changes. Installed copies will
 // show "Update available" and only switch when the user taps Update.
-const VERSION = 'v1.7.0';
+const VERSION = 'v1.7.1';
 const CACHE = 'rep-forms-' + VERSION;
 const FILES = ['./', './index.html', './forms.js', './manifest.webmanifest',
                './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
+  // cache:'reload' skips the browser's HTTP cache so an update never picks up stale files
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(u => new Request(u, {cache: 'reload'}))))));
   // no skipWaiting(): the new version waits until the user chooses to update
 });
 
