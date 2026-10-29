@@ -54,6 +54,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 .mini .r{display:grid;grid-template-columns:1fr 2fr;gap:3px}
 .mini .r span{height:11px;background:#c9dce8}
 .mini .r span+span{background:#eef5f9;border:1px solid #d5e0e7}
+.mini .r.ck{grid-template-columns:1fr 9fr}
 .mini .n{height:56px;background:#eef5f9;border:1px solid #d5e0e7}
 .cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
 .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -108,6 +109,22 @@ textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
 .hintbtn{min-height:32px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--fg);font-size:13px}
 .sub{font-size:13px;color:var(--muted)}
 
+/* checklist (screen) */
+.phead .prog{margin-left:auto;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+.phead .prog.done{background:var(--accent);color:var(--accent-fg);border-color:transparent}
+.clist{display:flex;flex-direction:column}
+.citem{display:flex;gap:14px;align-items:flex-start;padding:14px 18px;border-top:1px solid var(--line);cursor:pointer;position:relative;transition:background .12s}
+.citem:first-child{border-top:0}
+.citem:hover{background:var(--surface-2)}
+.citem input{position:absolute;opacity:0;pointer-events:none}
+.cbox{width:24px;height:24px;border:2px solid var(--line-strong);border-radius:7px;flex:none;display:grid;place-items:center;background:var(--surface);transition:background .12s,border-color .12s}
+.citem:has(input:checked) .cbox{background:var(--accent);border-color:var(--accent)}
+.citem:has(input:checked) .cbox::after{content:"";width:11px;height:6px;border:2.5px solid var(--accent-fg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.citem:has(input:checked) .ctext{color:var(--muted)}
+.citem:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:-3px}
+.callout{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;font-size:15px}
+.callout.final{border:2px solid var(--fg);font-weight:600}
+
 /* preview wrapper */
 .preview{overflow-x:auto;padding-bottom:8px}
 .preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
@@ -137,6 +154,15 @@ textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
 .sheet .oth{font-size:8.5pt}
 .sheet .oth u{text-decoration:none;border-bottom:1px solid #333;display:inline-block;min-width:60mm;padding:0 3px}
 .sheet .val{white-space:pre-wrap}
+.sheet.ck{font-size:10pt}
+.sheet.ck .s-head{margin-left:0;align-items:flex-start}
+.sheet.ck .s-head h2{font-size:17pt;line-height:1.1;max-width:62%}
+.sheet td.cb{background:var(--label);text-align:center;vertical-align:middle;padding:3px}
+.sheet td.cb .box{width:11px;height:11px;margin:0}
+.sheet td.cb .box.on::after{font-size:13px;top:-5px;left:1px}
+.sheet td.t{background:var(--field)}
+.sheet td.intro{background:var(--field);font-size:9pt}
+.sheet td.fin{background:#fff;border:1.5px solid #222;font-weight:700;font-size:10.5pt;padding:6px 8px}
 .printroot{display:none}
 
 @media print{
@@ -222,6 +248,8 @@ function ask(msg, yesLabel = 'Continue') {
 /* ── home shelf ── */
 function thumb(f) {
   const rows = f.sections.flatMap(s => s.rows).slice(0, 5);
+  if (f.kind === 'checklist') return `<div class="thumb"><div class="mini"><i class="t"></i><i></i>${
+    Array.from({length: 7}, (_, i) => i === 3 ? '<i></i>' : '<div class="r ck"><span></span><span></span></div>').join('')}</div></div>`;
   return `<div class="thumb"><div class="mini"><i class="t"></i><div class="r"><span></span><span></span></div><i></i>${
     rows.length === 1 ? '<div class="n"></div>' : rows.map(() => '<div class="r"><span></span><span></span></div>').join('')}</div></div>`;
 }
@@ -238,8 +266,26 @@ const isSingleNotes = (s, r) => s.rows.length === 1 && r.label === s.title;
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
 
 /* ── screen: app-style form ── */
+function renderChecklist(form) {
+  let html = form.intro ? `<div class="callout"><b>${esc(form.intro.label)}</b> ${esc(form.intro.text)}</div>` : '';
+  form.sections.forEach((s, si) => {
+    const items = s.items.map((t, ii) => `<label class="citem"><input type="checkbox" data-k="s${si}i${ii}"><span class="cbox"></span><span class="ctext">${esc(t)}</span></label>`).join('');
+    html += `<section class="panel"><div class="phead"><div class="step">${s.num}</div><div><h3>${esc(s.title)}</h3>${s.sub ? `<p>${esc(s.sub)}</p>` : ''}</div><span class="prog" data-sec="${si}" data-n="${s.items.length}"></span></div><div class="clist">${items}</div></section>`;
+  });
+  if (form.final) html += `<div class="callout final">${esc(form.final)}</div>`;
+  $('#fill').innerHTML = html;
+  $('#fill').querySelectorAll('[data-k]').forEach(el => el.checked = !!state[el.dataset.k]);
+  updateProgress();
+}
+function updateProgress() {
+  document.querySelectorAll('#fill .prog').forEach(p => {
+    const n = +p.dataset.n, done = Object.keys(state).filter(k => state[k] && k.startsWith(`s${p.dataset.sec}i`)).length;
+    p.textContent = `${done} / ${n}`; p.classList.toggle('done', done === n);
+  });
+}
 function renderFill(form) {
-  const hdr = form.header.flat().map((l, i) => {
+  if (form.kind === 'checklist') return renderChecklist(form);
+  const hdr = (form.header || []).flat().map((l, i) => {
     const id = `h${i}`;
     return `<div class="fld"><label for="${id}">${esc(l)}</label>
       <input class="inp" id="${id}" data-k="${id}" type="${isDate(l) ? 'date' : 'text'}" autocomplete="off"></div>`;
@@ -272,6 +318,7 @@ $('#fill').addEventListener('input', e => {
   const el = e.target; if (!el.dataset.k) return;
   state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.tagName === 'TEXTAREA') grow(el);
+  if (el.type === 'checkbox') updateProgress();
   dirty = true;
 });
 $('#fill').addEventListener('click', e => {
@@ -285,9 +332,22 @@ $('#fill').addEventListener('click', e => {
 window.addEventListener('resize', () => document.querySelectorAll('#fill textarea').forEach(grow));
 
 /* ── print: copy of the original paper form ── */
+function logoFor(form) {
+  return form.org ? `<div class="logo"><span><b>${esc(form.org.split(' ')[0])}</b><small>${esc(form.org.split(' ').slice(1).join(' '))}</small></span></div>` : '';
+}
+function renderChecklistSheet(form) {
+  const intro = form.intro ? `<table class="sec"><tr><td class="intro"><b>${esc(form.intro.label)}</b> ${esc(form.intro.text)}</td></tr></table>` : '';
+  const secs = form.sections.map((s, si) => {
+    const rows = s.items.map((t, ii) => `<tr><td class="cb"><span class="box${state[`s${si}i${ii}`] ? ' on' : ''}"></span></td><td class="t">${esc(t)}</td></tr>`).join('');
+    return `<table class="sec"><colgroup><col style="width:6%"><col></colgroup><tr class="band"><td colspan="2"><b>${s.num}. ${esc(s.title)}</b><span>${esc(s.sub || '')}</span></td></tr>${rows}</table>`;
+  }).join('');
+  const fin = form.final ? `<table class="sec"><tr><td class="fin">${esc(form.final)}</td></tr></table>` : '';
+  return `<div class="sheet ck"><div class="s-head"><h2>${esc(form.title)}</h2>${logoFor(form)}</div>${intro}${secs}${fin}</div>`;
+}
 function renderSheet(form) {
+  if (form.kind === 'checklist') return renderChecklistSheet(form);
   const v = k => esc(state[k] || '');
-  const hdrCells = form.header.map((row, ri) => `<tr>${row.map((l, ci) => {
+  const hdrCells = (form.header || []).map((row, ri) => `<tr>${row.map((l, ci) => {
     const k = `h${ri * row.length + ci}`;
     return `<td class="l">${esc(l)}</td><td class="v">${isDate(l) ? esc(fmtDate(state[k])) : v(k)}</td>`;
   }).join('')}</tr>`).join('');
