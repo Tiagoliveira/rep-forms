@@ -27,7 +27,7 @@ window.FORMS = [
   {
     id: 'pip-casework',
     title: 'Rep Casework Proforma – PIP Approach',
-    org: 'USDAW Education',
+    org: '',
     description: 'Problem, Investigate, Plan – for preparing a member’s case before meeting management.',
     header: [
       ['Member name', 'Workplace / department'],
@@ -62,7 +62,7 @@ window.FORMS = [
     id: 'grievance-prep',
     kind: 'checklist',
     title: 'Rep Grievance Preparation Checklist',
-    org: 'USDAW Education',
+    org: '',
     description: 'Decide the route, clarify the complaint, check the evidence and draft the grievance.',
     sections: [
       { num: 1, title: 'Decide the route', sub: 'Check the procedure, urgency and who needs to be involved', items: [
@@ -100,7 +100,7 @@ window.FORMS = [
     id: 'grievance-meeting',
     kind: 'checklist',
     title: 'Representing Members in Grievances',
-    org: 'USDAW Education',
+    org: '',
     description: 'Before, during and after the grievance meeting – what to check and when.',
     intro: { label: 'CHECK THE RIGHT GUIDANCE:', text: 'Great Britain - Acas Code and guidance  |  Northern Ireland - LRA Code and guidance  |  Isle of Man - Employment Act 2006, Isle of Man Code and MIRS guidance. Your Recognition agreement may provide additional rights.' },
     sections: [
@@ -182,7 +182,7 @@ window.FORMS = [
   {
     id: 'recruitment-planner',
     title: 'Recruitment Planner',
-    org: 'USDAW Education',
+    org: '',
     description: 'Colleagues, their shifts across the week, and whether they’ve joined.',
     layout: 'landscape',
     plain: true,
