@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Rep Forms</title>
 <meta name="theme-color" content="#470a68">
 <link rel="manifest" href="manifest.webmanifest">
@@ -27,6 +27,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--ui);min-height:100vh;-webkit-tap-highlight-color:transparent}
 button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;min-height:44px}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -145,6 +146,10 @@ select.inp{appearance:auto}
 .sketchnote .pad{width:64px;height:48px;flex:none;border:1.5px dashed var(--line-strong);border-radius:8px;background-image:radial-gradient(var(--line-strong) 1px,transparent 1px);background-size:8px 8px}
 
 /* preview wrapper */
+.pzbar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.pzbar button{min-height:38px;min-width:42px;padding:6px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);font-weight:600}
+.pzbar span{font-size:13px;color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
+.preview{touch-action:pan-x pan-y}
 .preview{overflow-x:auto;padding-bottom:8px}
 .preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
 
@@ -252,7 +257,15 @@ select.inp{appearance:auto}
     </div>
   </div>
   <div id="fill" class="stack"></div>
-  <div id="preview" class="preview" hidden></div>
+  <div id="previewWrap" hidden>
+    <div class="pzbar" role="group" aria-label="Preview zoom">
+      <button type="button" id="pzOut" aria-label="Zoom out">−</button>
+      <button type="button" id="pzFit">Fit</button>
+      <button type="button" id="pzIn" aria-label="Zoom in">+</button>
+      <span id="pzLabel">Pinch the page to zoom</span>
+    </div>
+    <div id="preview" class="preview"></div>
+  </div>
 </main>
 
 <div class="printroot" id="printroot"></div>
@@ -460,14 +473,46 @@ window.addEventListener('beforeprint', refreshPrint);
 
 function setView(prev) {
   $('#vFill').setAttribute('aria-pressed', !prev); $('#vPrev').setAttribute('aria-pressed', prev);
-  $('#fill').hidden = prev; $('#preview').hidden = !prev;
+  $('#fill').hidden = prev; $('#previewWrap').hidden = !prev; pz = 1;
   if (prev) { $('#preview').innerHTML = renderSheet(FORMS.find(f => f.id === current)); fitPreview(); }
   else $('#fill').querySelectorAll('textarea').forEach(grow);
 }
+/* preview-only zoom: pz is a multiple of the fit-to-width size */
+let pz = 1, fitZ = 1;
 function fitPreview() {
   const sh = $('#preview .sheet'); if (!sh) return;
-  sh.style.zoom = 1; const z = Math.min(1, $('#preview').clientWidth / sh.offsetWidth); sh.style.zoom = z;
+  sh.style.zoom = 1; fitZ = Math.min(1, $('#preview').clientWidth / sh.offsetWidth); applyZoom();
 }
+function applyZoom(cx, cy) {
+  const sh = $('#preview .sheet'), box = $('#preview'); if (!sh) return;
+  const before = parseFloat(sh.style.zoom) || fitZ;
+  pz = Math.min(4, Math.max(1, pz));
+  const after = fitZ * pz; sh.style.zoom = after;
+  if (cx != null) {               // keep the point under the fingers in place
+    const k = after / before, r = box.getBoundingClientRect();
+    const x = cx - r.left; box.scrollLeft = (box.scrollLeft + x) * k - x;
+    const y = cy - r.top; window.scrollBy(0, y * k - y);
+  }
+  $('#pzLabel').textContent = pz === 1 ? 'Pinch the page to zoom' : Math.round(pz * 100) + '%';
+}
+$('#pzIn').onclick = () => { pz *= 1.4; applyZoom(); };
+$('#pzOut').onclick = () => { pz /= 1.4; applyZoom(); };
+$('#pzFit').onclick = () => { pz = 1; applyZoom(); };
+let pinch = null;
+const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+$('#preview').addEventListener('touchstart', e => { if (e.touches.length === 2) pinch = {d: dist(e.touches), z: pz}; }, {passive: true});
+$('#preview').addEventListener('touchmove', e => {
+  if (!pinch || e.touches.length !== 2) return;
+  e.preventDefault();
+  pz = pinch.z * dist(e.touches) / pinch.d;
+  applyZoom((e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+}, {passive: false});
+$('#preview').addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+/* block pinch / gesture zoom everywhere else (iOS ignores user-scalable=no) */
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 && !e.target.closest('#preview')) e.preventDefault(); }, {passive: false});
+['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault()));
+document.addEventListener('wheel', e => { if (e.ctrlKey && !e.target.closest('#preview')) e.preventDefault(); }, {passive: false});
+$('#preview').addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); pz *= e.deltaY < 0 ? 1.1 : 1 / 1.1; applyZoom(e.clientX, e.clientY); } }, {passive: false});
 window.addEventListener('resize', fitPreview);
 $('#vFill').onclick = () => setView(false);
 $('#vPrev').onclick = () => setView(true);

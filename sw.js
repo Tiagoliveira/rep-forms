@@ -1,6 +1,6 @@
 // Bump VERSION whenever any app file changes. Installed copies will
 // show "Update available" and only switch when the user taps Update.
-const VERSION = 'v1.5.0';
+const VERSION = 'v1.5.1';
 const CACHE = 'rep-forms-' + VERSION;
 const FILES = ['./', './index.html', './forms.js', './manifest.webmanifest',
                './icon-192.png', './icon-512.png'];
