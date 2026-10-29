@@ -4,195 +4,292 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rep Forms</title>
-<meta name="theme-color" content="#1f2a30">
+<meta name="theme-color" content="#1d2b36">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-/* Layout: slim toolbar + form picker, A4 "paper" sheet centred below. Paper stays light in both themes. */
+/* Layout: two views. Home = a shelf of form cards drawn like mini paper sheets.
+   Form = slim toolbar (Back · title · Clear · Print) over a centred A4 sheet. Paper stays light in both themes. */
 :root{
-  --ui-bg:#eef2f4; --ui-fg:#1f2a30; --ui-muted:#5b6b75; --ui-bar:#1f2a30; --ui-bar-fg:#f2f6f8;
-  --ui-chip:#ffffff; --ui-line:#c9d3d9; --accent:#2f6f95; --warn:#a4501c;
+  --bg:#e9eef1; --surface:#ffffff; --fg:#17232c; --muted:#5a6a74; --line:#cfd8de;
+  --bar:#1d2b36; --bar-fg:#f1f5f7; --accent:#2f6f95; --accent-fg:#ffffff; --accent-soft:#dbe9f2;
   --paper:#ffffff; --ink:#1b1b1b; --label:#c9dce8; --field:#eef5f9; --band:#2b2b2b; --rule:#7a8a96;
-  --font:"Segoe UI",Arial,Helvetica,sans-serif;
+  --ui:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  --r:12px;
 }
-@media (prefers-color-scheme:dark){:root{--ui-bg:#151b1f;--ui-fg:#e3eaee;--ui-muted:#9aabb5;--ui-chip:#212a30;--ui-line:#33414a;--accent:#7fb7d9;color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#11181d; --surface:#1a242b; --fg:#e4ebef; --muted:#97a8b2; --line:#2c3a43;
+  --bar:#0c1216; --accent:#7fb7d9; --accent-fg:#0c1216; --accent-soft:#1f3443; color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
-body{background:var(--ui-bg);color:var(--ui-fg);font:15px/1.4 var(--font);min-height:100vh}
-.bar{position:sticky;top:0;z-index:5;background:var(--ui-bar);color:var(--ui-bar-fg);
-  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
-  display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.bar h1{font-size:17px;margin:0 auto 0 0;letter-spacing:.02em}
-.bar h1 small{font-weight:400;opacity:.65;font-size:12px;margin-left:8px}
-button,select{font:inherit;border-radius:6px;border:1px solid var(--ui-line);padding:8px 12px;cursor:pointer}
-select{background:var(--ui-chip);color:var(--ui-fg);max-width:100%}
-.btn{background:#ffffff1a;color:var(--ui-bar-fg);border-color:#ffffff33}
-.btn.primary{background:#e9f1f6;color:#1f2a30;border-color:transparent;font-weight:600}
-button:focus-visible,select:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.picker{padding:14px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:860px;margin:0 auto}
-.picker label{font-size:13px;color:var(--ui-muted)}
-.picker select{flex:1 1 260px}
-.notice{max-width:860px;margin:10px auto 0;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));font-size:13px;color:var(--ui-muted)}
-.banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--ui-chip);border:1px solid var(--ui-line);border-radius:8px;padding:10px 12px;color:var(--ui-fg);margin-top:8px}
-.banner button{background:var(--accent);color:#fff;border-color:transparent}
-.banner.ask button.ghost{background:transparent;color:var(--ui-fg);border-color:var(--ui-line)}
-.wrap{padding:16px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));overflow-x:auto}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--ui);min-height:100vh;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;min-height:44px}
+button:focus-visible,[contenteditable]:focus-visible,a:focus-visible,.card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:5;background:var(--bar);color:var(--bar-fg);padding-top:env(safe-area-inset-top,0px);box-shadow:0 1px 0 #0003}
+.bar-in{display:flex;align-items:center;gap:8px;min-height:56px;max-width:1000px;margin:0 auto}
+.bar h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .ver{font-size:12px;opacity:.55;font-weight:400;margin-left:6px}
+.ib{background:transparent;color:var(--bar-fg);display:inline-flex;align-items:center;gap:6px;padding:8px 10px}
+.ib:hover{background:#ffffff14}
+.ib svg{width:22px;height:22px;flex:none}
+.pri{background:var(--bar-fg);color:var(--bar);font-weight:650;display:inline-flex;align-items:center;gap:8px}
+.pri svg{width:20px;height:20px}
+@media (max-width:520px){.lbl{display:none}.pri{padding:10px 12px}}
+
+/* home */
+.home{max-width:1000px;margin:0 auto;padding-block:28px 56px}
+.home h2{font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
+.home .lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  display:flex;flex-direction:column;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 28px #0000001f}
+.thumb{background:var(--accent-soft);padding:18px 22px 0;height:150px;overflow:hidden}
+.mini{background:#fff;height:100%;border-radius:4px 4px 0 0;box-shadow:0 2px 10px #0000002a;padding:12px 12px 0;display:flex;flex-direction:column;gap:5px}
+.mini i{display:block;height:6px;border-radius:2px;background:#2b2b2b}
+.mini .t{width:70%;height:7px;background:#1b1b1b;margin-bottom:4px}
+.mini .r{display:grid;grid-template-columns:1fr 2fr;gap:3px}
+.mini .r span{height:11px;background:#c9dce8}
+.mini .r span+span{background:#eef5f9;border:1px solid #d5e0e7}
+.mini .n{height:56px;background:#eef5f9;border:1px solid #d5e0e7}
+.cbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
+.cbody .org{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cbody h3{margin:0;font-size:17px;line-height:1.25;text-wrap:balance}
+.cbody p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.cbody .go{margin-top:auto;padding-top:10px;color:var(--accent);font-weight:600;font-size:14px}
+.privacy{margin-top:28px;display:flex;gap:12px;align-items:flex-start;color:var(--muted);font-size:14px;max-width:62ch}
+.privacy svg{width:20px;height:20px;flex:none;margin-top:1px}
+
+/* banners */
+.banners{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.banners:has(.banner:not([hidden])){padding-top:12px}
+.banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 14px}
+.banner span{flex:1 1 200px}
+.banner button{background:var(--accent);color:var(--accent-fg);font-weight:600;min-height:40px}
+.banner button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+
+/* form view */
+.formview{padding-block:16px 56px;overflow-x:auto}
+.hint{max-width:210mm;margin:0 auto 10px;font-size:13px;color:var(--muted)}
 
 /* ── the paper ── */
-.sheet{background:var(--paper);color:var(--ink);width:210mm;max-width:100%;margin:0 auto;padding:12mm 11mm;
-  box-shadow:0 1px 3px #0002,0 8px 24px #0001;font:10pt/1.35 Arial,Helvetica,sans-serif;color-scheme:light}
-.s-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.sheet{background:var(--paper);color:var(--ink);width:210mm;max-width:100%;margin:0 auto;padding:12mm 11mm;border-radius:3px;
+  box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;font:10pt/1.35 Arial,Helvetica,sans-serif;color-scheme:light}
+.s-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap}
 .s-head h2{font-size:15pt;margin:0;text-transform:uppercase;letter-spacing:.01em}
 .s-head .org{font-weight:700;font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:#444;white-space:nowrap}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 td{border:1px solid var(--rule);vertical-align:top;padding:5px 7px}
-td.l{background:var(--label);font-weight:700;width:33%}
+td.l{background:var(--label);font-weight:700}
 td.v{background:var(--field)}
-.hdr td.l{width:20%} .hdr td.v{width:30%}
-.hdr{margin-bottom:10px}
-.sec{margin-bottom:10px;break-inside:auto}
+.hdr,.sec{margin-bottom:10px}
 .band td{background:var(--band);color:#fff;padding:6px 9px;border-color:var(--band)}
 .band b{font-size:12pt;text-transform:uppercase;margin-right:8px}
 .band span{font-size:9pt}
 tr{break-inside:avoid}
 .hints{font-weight:400;font-style:italic;margin-top:6px;font-size:9pt;line-height:1.45}
-.f{min-height:1.5em;outline:none;white-space:pre-wrap;word-wrap:break-word}
-.f:empty::before{content:attr(data-ph);color:#8a9aa4}
-.checks{display:flex;flex-wrap:wrap;gap:4px 16px;margin-bottom:6px}
-.checks label{display:flex;gap:5px;align-items:center;cursor:pointer}
-.checks input{width:14px;height:14px;margin:0;accent-color:#2b2b2b}
+.f{min-height:1.5em;outline:none;white-space:pre-wrap;word-wrap:break-word;cursor:text;border-radius:2px}
+.f:focus{background:#fffbe6}
+.checks{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:6px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.checks input{width:16px;height:16px;margin:0;accent-color:#2b2b2b}
 .other{display:flex;gap:6px;align-items:baseline;margin-bottom:6px}
 .other .f{flex:1;border-bottom:1px solid var(--rule);min-height:1.3em}
-.foot{margin-top:6px;font-size:8pt;color:#666}
 
 @media (max-width:640px){
   .sheet{padding:14px 10px}
-  td.l{width:38%}
+  .sec col:first-child{width:40%!important}
+  .hdr colgroup{display:none}
   .hdr tr{display:flex;flex-wrap:wrap}
-  .hdr td{flex:1 1 50%;width:auto!important}
+  .hdr td{flex:1 1 40%}
+  .hdr td.v{flex-basis:60%}
 }
 @media print{
   @page{size:A4;margin:10mm}
   body{background:#fff}
-  .bar,.picker,.notice,.noprint{display:none!important}
-  .wrap{padding:0;overflow:visible}
-  .sheet{width:auto;padding:0;box-shadow:none;margin:0}
+  .bar,.banners,.hint,.home{display:none!important}
+  .formview{padding:0;overflow:visible}
+  .sheet{width:auto;padding:0;box-shadow:none;margin:0;border-radius:0}
+  .f:focus{background:none}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .f:empty::before{content:""}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <header class="bar">
-  <h1>Rep Forms <small id="ver"></small></h1>
-  <button class="btn" id="clear" type="button">Clear form</button>
-  <button class="btn primary" id="print" type="button">Print / Save PDF</button>
+  <div class="bar-in gut">
+    <button class="ib" id="back" type="button" hidden aria-label="All forms">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span class="lbl">Forms</span>
+    </button>
+    <h1 id="barTitle">Rep Forms<span class="ver" id="ver"></span></h1>
+    <button class="ib" id="clear" type="button" hidden aria-label="Clear form">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span class="lbl">Clear</span>
+    </button>
+    <button class="pri" id="print" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v7H6z"/></svg><span class="lbl">Print / PDF</span>
+    </button>
+  </div>
 </header>
 
-<div class="picker">
-  <label for="formSel">Form</label>
-  <select id="formSel"></select>
-</div>
-
-<div class="notice" id="notice">
-  <div>Nothing you type is saved. Print or save as PDF before you close the app.</div>
-  <div class="banner ask" id="confirmClear" hidden>
-    Clear everything on this form?
-    <button type="button" id="clearYes">Clear</button>
-    <button type="button" class="ghost" id="clearNo">Keep</button>
-  </div>
+<div class="banners gut">
   <div class="banner" id="updateBanner" hidden>
-    A new version of Rep Forms is ready.
+    <span>A new version of Rep Forms is ready.</span>
     <button type="button" id="updateBtn">Update now</button>
+    <button type="button" class="ghost" id="updateLater">Later</button>
+  </div>
+  <div class="banner" id="confirmBox" hidden>
+    <span id="confirmMsg"></span>
+    <button type="button" id="confirmYes">Continue</button>
+    <button type="button" class="ghost" id="confirmNo">Cancel</button>
   </div>
 </div>
 
-<main class="wrap"><div class="sheet" id="sheet"></div></main>
+<main id="home" class="home gut">
+  <h2>Choose a form</h2>
+  <p class="lede">Tap a form to fill it in, then print it or save it as a PDF.</p>
+  <div class="shelf" id="shelf"></div>
+  <div class="privacy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <span>Nothing you type is saved on this device or sent anywhere. When you leave a form or close the app, it’s gone. Print or save a PDF first.</span>
+  </div>
+</main>
+
+<main id="formview" class="formview gut" hidden>
+  <p class="hint">Tap any box to type. Use Print / PDF when you’re done.</p>
+  <div class="sheet" id="sheet"></div>
+</main>
 
 <script src="forms.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const field = (ph, lines = 1) =>
-  `<div class="f" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(ph)}" data-ph="" style="min-height:${(lines*1.45).toFixed(2)}em"></div>`;
-let dirty = false;
+const field = (name, lines = 1) =>
+  `<div class="f" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(name)}" style="min-height:${(lines*1.45).toFixed(2)}em"></div>`;
+let dirty = false, current = null;
 
+/* ── in-page confirm ── */
+function ask(msg, yesLabel = 'Continue') {
+  return new Promise(res => {
+    $('#confirmMsg').textContent = msg; $('#confirmYes').textContent = yesLabel;
+    $('#confirmBox').hidden = false; $('#confirmYes').focus(); window.scrollTo({top:0});
+    const done = v => { $('#confirmBox').hidden = true; $('#confirmYes').onclick = $('#confirmNo').onclick = null; res(v); };
+    $('#confirmYes').onclick = () => done(true); $('#confirmNo').onclick = () => done(false);
+  });
+}
+
+/* ── home shelf ── */
+function thumb(f) {
+  const rows = f.sections.flatMap(s => s.rows).slice(0, 5);
+  const big = rows.length === 1;
+  return `<div class="thumb"><div class="mini"><i class="t"></i><div class="r"><span></span><span></span></div><i></i>${
+    big ? '<div class="n"></div>' : rows.map(() => '<div class="r"><span></span><span></span></div>').join('')}</div></div>`;
+}
+$('#shelf').innerHTML = FORMS.map(f => `
+  <a class="card" href="#${esc(f.id)}">
+    ${thumb(f)}
+    <div class="cbody">
+      ${f.org ? `<div class="org">${esc(f.org)}</div>` : ''}
+      <h3>${esc(f.title)}</h3>
+      ${f.description ? `<p>${esc(f.description)}</p>` : ''}
+      <div class="go">Open form →</div>
+    </div>
+  </a>`).join('');
+
+/* ── form sheet ── */
 function render(form) {
   const hdr = form.header.map(r => `<tr>${r.map(l => `<td class="l">${esc(l)}</td><td class="v">${field(l)}</td>`).join('')}</tr>`).join('');
   const secs = form.sections.map(s => {
     const rows = s.rows.map(r => {
-      let body = '';
+      let body;
       if (r.type === 'checks') {
         body = `<div class="checks">${r.options.map(o => `<label><input type="checkbox"> ${esc(o)}</label>`).join('')}</div>`
              + (r.other ? `<div class="other">Other: ${field('Other')}</div>` : '')
-             + field(r.label, Math.max(1, (r.lines||2) - 1));
+             + field(r.label, Math.max(1, (r.lines || 2) - 1));
       } else body = field(r.label, r.lines || 2);
       const hints = r.hints ? `<div class="hints">${r.hints.map(esc).join('<br>')}</div>` : '';
-      const single = s.rows.length === 1 && r.label === s.title;
-      return single ? `<tr><td class="v" colspan="2">${body}</td></tr>`
-                    : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v">${body}</td></tr>`;
+      return (s.rows.length === 1 && r.label === s.title)
+        ? `<tr><td class="v" colspan="2">${body}</td></tr>`
+        : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v">${body}</td></tr>`;
     }).join('');
-    const band = `<tr class="band"><td colspan="2"><b>${s.num ? s.num + '. ' : ''}${esc(s.title)}</b><span>${esc(s.sub||'')}</span></td></tr>`;
+    const band = `<tr class="band"><td colspan="2"><b>${s.num ? s.num + '. ' : ''}${esc(s.title)}</b><span>${esc(s.sub || '')}</span></td></tr>`;
     return `<table class="sec"><colgroup><col style="width:33%"><col></colgroup>${band}${rows}</table>`;
   }).join('');
   $('#sheet').innerHTML =
     `<div class="s-head"><h2>${esc(form.title)}</h2>${form.org ? `<div class="org">${esc(form.org)}</div>` : ''}</div>
      <table class="hdr"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col style="width:32%"></colgroup>${hdr}</table>${secs}`;
-  document.title = form.title + ' – Rep Forms';
   dirty = false;
 }
 
-// paste as plain text only
+/* ── routing: #form-id opens a form, no hash shows the shelf ── */
+function show() {
+  const form = FORMS.find(f => f.id === location.hash.slice(1));
+  const onForm = !!form;
+  $('#home').hidden = onForm; $('#formview').hidden = !onForm;
+  ['#back', '#clear', '#print'].forEach(s => $(s).hidden = !onForm);
+  $('#confirmBox').hidden = true;
+  if (onForm) {
+    if (current !== form.id) render(form);
+    current = form.id;
+    $('#barTitle').firstChild.textContent = form.title.split(' – ')[0];
+    document.title = form.title + ' · Rep Forms';
+  } else {
+    current = null; $('#sheet').innerHTML = ''; dirty = false;
+    $('#barTitle').firstChild.textContent = 'Rep Forms';
+    document.title = 'Rep Forms';
+  }
+  window.scrollTo({top: 0});
+}
+let lastHash = location.hash;
+window.addEventListener('hashchange', async () => {
+  if (dirty && current && location.hash !== lastHash) {
+    const target = location.hash;
+    history.replaceState(null, '', lastHash || location.pathname);
+    if (!(await ask('Leave this form? What you’ve typed will be cleared.', 'Leave'))) return;
+    dirty = false; history.pushState(null, '', target || location.pathname);
+  }
+  lastHash = location.hash; show();
+});
+show();
+
+$('#back').onclick = () => { location.hash = ''; };
+$('#print').onclick = () => window.print();
+$('#clear').onclick = async () => {
+  if (!dirty || await ask('Clear everything on this form?', 'Clear')) { const f = current; current = null; location.hash === '#' + f && show(); }
+};
+$('#sheet').addEventListener('input', () => dirty = true);
+$('#sheet').addEventListener('change', () => dirty = true);
 document.addEventListener('paste', e => {
   if (!e.target.closest('[contenteditable]')) return;
   e.preventDefault();
   document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text'));
 });
-$('#sheet').addEventListener('input', () => dirty = true);
-
-const sel = $('#formSel');
-sel.innerHTML = FORMS.map(f => `<option value="${esc(f.id)}">${esc(f.title)}</option>`).join('');
-const pick = () => render(FORMS.find(f => f.id === sel.value) || FORMS[0]);
-let lastPick = sel.value;
-sel.addEventListener('change', () => {
-  if (dirty && !confirm('Switching forms clears what you have typed. Continue?')) { sel.value = lastPick; return; }
-  lastPick = sel.value; pick();
-});
-const hashForm = location.hash.slice(1);
-if (FORMS.some(f => f.id === hashForm)) sel.value = lastPick = hashForm;
-pick();
-
-$('#print').onclick = () => window.print();
-$('#clear').onclick = () => { $('#confirmClear').hidden = false; $('#clearYes').focus(); };
-$('#clearNo').onclick = () => $('#confirmClear').hidden = true;
-$('#clearYes').onclick = () => { $('#confirmClear').hidden = true; pick(); };
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-// ── offline + opt-in updates ──
+/* ── offline + opt-in updates ── */
 if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('sw.js').then(reg => {
     const offer = w => {
       $('#updateBanner').hidden = false;
-      $('#updateBtn').onclick = () => {
-        if (dirty && !confirm('Updating reloads the app and clears this form. Continue?')) return;
+      $('#updateLater').onclick = () => $('#updateBanner').hidden = true;
+      $('#updateBtn').onclick = async () => {
+        if (dirty && !(await ask('Updating reloads the app and clears this form.', 'Update'))) return;
         w.postMessage('SKIP_WAITING');
       };
     };
-    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    if (reg.waiting && hadController) offer(reg.waiting);
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
-      w.addEventListener('statechange', () => {
-        if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w);
-      });
+      w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
     });
-    // check for a new version whenever the app is opened while online
     if (navigator.onLine) reg.update().catch(() => {});
   });
-  // reload only when switching from an old version, not on first install
-  const hadController = !!navigator.serviceWorker.controller;
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!hadController || reloading) return; reloading = true; dirty = false; location.reload();

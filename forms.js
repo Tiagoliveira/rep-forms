@@ -7,12 +7,14 @@
 //  Row types:
 //    { label, hints?, lines? }              – free-text box (lines = min height)
 //    { label, type:'checks', options, other } – tick boxes (+ optional "Other")
+//  `description` is the one-line summary shown on the home screen.
 // ─────────────────────────────────────────────────────────────
 window.FORMS = [
   {
     id: 'pip-casework',
     title: 'Rep Casework Proforma – PIP Approach',
     org: 'USDAW Education',
+    description: 'Problem, Investigate, Plan – for preparing a member’s case before meeting management.',
     header: [
       ['Member name', 'Workplace / department'],
       ['Manager', 'Date issue raised'],
@@ -46,6 +48,7 @@ window.FORMS = [
     id: 'casework-notes',
     title: 'Casework Notes – Continuation Sheet',
     org: '',
+    description: 'Lined notes page for meetings, calls and follow-ups on a case.',
     header: [
       ['Member name', 'Date'],
       ['Rep', 'Page'],
