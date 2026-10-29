@@ -149,8 +149,10 @@ select.inp{appearance:auto}
 .pzbar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .pzbar button{min-height:38px;min-width:42px;padding:6px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);font-weight:600}
 .pzbar span{font-size:13px;color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
-.preview{touch-action:pan-x pan-y}
-.preview{overflow-x:auto;padding-bottom:8px}
+.preview{touch-action:pan-x pan-y;overflow:auto;overscroll-behavior:contain;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;height:70vh}
+.preview .sheet{margin:0 auto}
+html.previewing,html.previewing body{overflow:hidden;overscroll-behavior:none}
+html.previewing .formview{padding-bottom:0}
 .preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
 
 /* ── the printed page: copies the original paper layout ── */
@@ -474,14 +476,17 @@ window.addEventListener('beforeprint', refreshPrint);
 function setView(prev) {
   $('#vFill').setAttribute('aria-pressed', !prev); $('#vPrev').setAttribute('aria-pressed', prev);
   $('#fill').hidden = prev; $('#previewWrap').hidden = !prev; pz = 1;
-  if (prev) { $('#preview').innerHTML = renderSheet(FORMS.find(f => f.id === current)); fitPreview(); }
+  document.documentElement.classList.toggle('previewing', prev);
+  if (prev) { window.scrollTo({top: 0}); $('#preview').innerHTML = renderSheet(FORMS.find(f => f.id === current)); $('#preview').scrollTop = 0; fitPreview(); }
   else $('#fill').querySelectorAll('textarea').forEach(grow);
 }
 /* preview-only zoom: pz is a multiple of the fit-to-width size */
 let pz = 1, fitZ = 1;
 function fitPreview() {
-  const sh = $('#preview .sheet'); if (!sh) return;
-  sh.style.zoom = 1; fitZ = Math.min(1, $('#preview').clientWidth / sh.offsetWidth); applyZoom();
+  const sh = $('#preview .sheet'), box = $('#preview'); if (!sh) return;
+  // the window fills the screen below its own top edge, so the page never needs to scroll
+  box.style.height = Math.max(260, window.innerHeight - box.getBoundingClientRect().top - 16) + 'px';
+  sh.style.zoom = 1; fitZ = Math.min(1, (box.clientWidth - 24) / sh.offsetWidth); applyZoom();
 }
 function applyZoom(cx, cy) {
   const sh = $('#preview .sheet'), box = $('#preview'); if (!sh) return;
@@ -491,7 +496,7 @@ function applyZoom(cx, cy) {
   if (cx != null) {               // keep the point under the fingers in place
     const k = after / before, r = box.getBoundingClientRect();
     const x = cx - r.left; box.scrollLeft = (box.scrollLeft + x) * k - x;
-    const y = cy - r.top; window.scrollBy(0, y * k - y);
+    const y = cy - r.top; box.scrollTop = (box.scrollTop + y) * k - y;
   }
   $('#pzLabel').textContent = pz === 1 ? 'Pinch the page to zoom' : Math.round(pz * 100) + '%';
 }
@@ -523,6 +528,7 @@ function show() {
   $('#home').hidden = !!form; $('#formview').hidden = !form;
   ['#back', '#clear', '#print'].forEach(s => $(s).hidden = !form);
   $('#confirmBox').hidden = true;
+  if (!form) document.documentElement.classList.remove('previewing');
   if (form) {
     if (current !== form.id) { state = {}; dirty = false; current = form.id; renderFill(form); setView(false); }
     $('#fOrg').textContent = form.org || ''; $('#fTitle').textContent = form.title;
