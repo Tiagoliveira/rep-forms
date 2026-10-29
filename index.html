@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rep Forms</title>
-<meta name="theme-color" content="#1d2b36">
+<meta name="theme-color" content="#470a68">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -12,15 +12,18 @@
 /* Layout: Home = shelf of form cards. Form = app-style filling view (stacked cards, auto-growing boxes)
    with a "Print preview" toggle. The printed page is a separate render that copies the original paper layout. */
 :root{
-  --bg:#e9eef1; --surface:#ffffff; --surface-2:#f4f7f9; --fg:#17232c; --muted:#5a6a74; --line:#cfd8de; --line-strong:#a9b8c1;
-  --bar:#1d2b36; --bar-fg:#f1f5f7; --accent:#2f6f95; --accent-fg:#ffffff; --accent-soft:#dbe9f2; --focus:#2f6f9533;
+  /* Usdaw: deep purple (PMS 2617C) + magenta (PMS 248C) */
+  --bg:#f2eff5; --surface:#ffffff; --surface-2:#f8f6fa; --fg:#221530; --muted:#655a70; --line:#ddd5e4; --line-strong:#b8aac4;
+  --bar:#470a68; --bar-fg:#ffffff; --accent:#a51890; --accent-fg:#ffffff; --accent-soft:#f4e1ef; --focus:#a5189033;
+  --step:#470a68; --step-fg:#ffffff;
   --paper:#ffffff; --ink:#1b1b1b; --label:#c9dce8; --field:#eef5f9; --band:#2b2b2b; --rule:#7a8a96;
   --ui:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
   --r:14px;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#11181d; --surface:#1a242b; --surface-2:#141d23; --fg:#e4ebef; --muted:#97a8b2; --line:#2c3a43; --line-strong:#41525d;
-  --bar:#0c1216; --accent:#7fb7d9; --accent-fg:#0c1216; --accent-soft:#1f3443; --focus:#7fb7d940; color-scheme:dark}}
+  --bg:#140d1a; --surface:#1f1527; --surface-2:#191120; --fg:#efe8f4; --muted:#ab9eb7; --line:#352841; --line-strong:#4f3e5e;
+  --bar:#2c0642; --accent:#e47ccd; --accent-fg:#1f0a1a; --accent-soft:#3a1d36; --focus:#e47ccd40;
+  --step:#e47ccd; --step-fg:#1f0a1a; color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
@@ -37,7 +40,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 .ib{background:transparent;color:var(--bar-fg);display:inline-flex;align-items:center;gap:6px;padding:8px 10px}
 .ib:hover{background:#ffffff14}
 .ib svg,.pri svg{width:21px;height:21px;flex:none}
-.pri{background:var(--bar-fg);color:var(--bar);font-weight:650;display:inline-flex;align-items:center;gap:8px}
+.pri{background:var(--accent);color:var(--accent-fg);font-weight:650;display:inline-flex;align-items:center;gap:8px}
 @media (max-width:560px){.lbl{display:none}.pri{padding:10px 12px}}
 
 /* home */
@@ -82,7 +85,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 .stack{display:flex;flex-direction:column;gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .phead{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
-.step{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:15px;flex:none}
+.step{width:30px;height:30px;border-radius:50%;background:var(--step);color:var(--step-fg);display:grid;place-items:center;font-weight:700;font-size:15px;flex:none}
 .phead h3{margin:0;font-size:17px;line-height:1.2}
 .phead p{margin:1px 0 0;font-size:13px;color:var(--muted)}
 .pbody{padding:6px 18px 18px;display:flex;flex-direction:column;gap:18px}
