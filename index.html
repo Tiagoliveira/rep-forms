@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rep Forms</title>
+<meta name="theme-color" content="#1f2a30">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* Layout: slim toolbar + form picker, A4 "paper" sheet centred below. Paper stays light in both themes. */
+:root{
+  --ui-bg:#eef2f4; --ui-fg:#1f2a30; --ui-muted:#5b6b75; --ui-bar:#1f2a30; --ui-bar-fg:#f2f6f8;
+  --ui-chip:#ffffff; --ui-line:#c9d3d9; --accent:#2f6f95; --warn:#a4501c;
+  --paper:#ffffff; --ink:#1b1b1b; --label:#c9dce8; --field:#eef5f9; --band:#2b2b2b; --rule:#7a8a96;
+  --font:"Segoe UI",Arial,Helvetica,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{--ui-bg:#151b1f;--ui-fg:#e3eaee;--ui-muted:#9aabb5;--ui-chip:#212a30;--ui-line:#33414a;--accent:#7fb7d9;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--ui-bg);color:var(--ui-fg);font:15px/1.4 var(--font);min-height:100vh}
+.bar{position:sticky;top:0;z-index:5;background:var(--ui-bar);color:var(--ui-bar-fg);
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bar h1{font-size:17px;margin:0 auto 0 0;letter-spacing:.02em}
+.bar h1 small{font-weight:400;opacity:.65;font-size:12px;margin-left:8px}
+button,select{font:inherit;border-radius:6px;border:1px solid var(--ui-line);padding:8px 12px;cursor:pointer}
+select{background:var(--ui-chip);color:var(--ui-fg);max-width:100%}
+.btn{background:#ffffff1a;color:var(--ui-bar-fg);border-color:#ffffff33}
+.btn.primary{background:#e9f1f6;color:#1f2a30;border-color:transparent;font-weight:600}
+button:focus-visible,select:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.picker{padding:14px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:860px;margin:0 auto}
+.picker label{font-size:13px;color:var(--ui-muted)}
+.picker select{flex:1 1 260px}
+.notice{max-width:860px;margin:10px auto 0;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));font-size:13px;color:var(--ui-muted)}
+.banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--ui-chip);border:1px solid var(--ui-line);border-radius:8px;padding:10px 12px;color:var(--ui-fg);margin-top:8px}
+.banner button{background:var(--accent);color:#fff;border-color:transparent}
+.banner.ask button.ghost{background:transparent;color:var(--ui-fg);border-color:var(--ui-line)}
+.wrap{padding:16px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));overflow-x:auto}
+
+/* ── the paper ── */
+.sheet{background:var(--paper);color:var(--ink);width:210mm;max-width:100%;margin:0 auto;padding:12mm 11mm;
+  box-shadow:0 1px 3px #0002,0 8px 24px #0001;font:10pt/1.35 Arial,Helvetica,sans-serif;color-scheme:light}
+.s-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.s-head h2{font-size:15pt;margin:0;text-transform:uppercase;letter-spacing:.01em}
+.s-head .org{font-weight:700;font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:#444;white-space:nowrap}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+td{border:1px solid var(--rule);vertical-align:top;padding:5px 7px}
+td.l{background:var(--label);font-weight:700;width:33%}
+td.v{background:var(--field)}
+.hdr td.l{width:20%} .hdr td.v{width:30%}
+.hdr{margin-bottom:10px}
+.sec{margin-bottom:10px;break-inside:auto}
+.band td{background:var(--band);color:#fff;padding:6px 9px;border-color:var(--band)}
+.band b{font-size:12pt;text-transform:uppercase;margin-right:8px}
+.band span{font-size:9pt}
+tr{break-inside:avoid}
+.hints{font-weight:400;font-style:italic;margin-top:6px;font-size:9pt;line-height:1.45}
+.f{min-height:1.5em;outline:none;white-space:pre-wrap;word-wrap:break-word}
+.f:empty::before{content:attr(data-ph);color:#8a9aa4}
+.checks{display:flex;flex-wrap:wrap;gap:4px 16px;margin-bottom:6px}
+.checks label{display:flex;gap:5px;align-items:center;cursor:pointer}
+.checks input{width:14px;height:14px;margin:0;accent-color:#2b2b2b}
+.other{display:flex;gap:6px;align-items:baseline;margin-bottom:6px}
+.other .f{flex:1;border-bottom:1px solid var(--rule);min-height:1.3em}
+.foot{margin-top:6px;font-size:8pt;color:#666}
+
+@media (max-width:640px){
+  .sheet{padding:14px 10px}
+  td.l{width:38%}
+  .hdr tr{display:flex;flex-wrap:wrap}
+  .hdr td{flex:1 1 50%;width:auto!important}
+}
+@media print{
+  @page{size:A4;margin:10mm}
+  body{background:#fff}
+  .bar,.picker,.notice,.noprint{display:none!important}
+  .wrap{padding:0;overflow:visible}
+  .sheet{width:auto;padding:0;box-shadow:none;margin:0}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .f:empty::before{content:""}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Rep Forms <small id="ver"></small></h1>
+  <button class="btn" id="clear" type="button">Clear form</button>
+  <button class="btn primary" id="print" type="button">Print / Save PDF</button>
+</header>
+
+<div class="picker">
+  <label for="formSel">Form</label>
+  <select id="formSel"></select>
+</div>
+
+<div class="notice" id="notice">
+  <div>Nothing you type is saved. Print or save as PDF before you close the app.</div>
+  <div class="banner ask" id="confirmClear" hidden>
+    Clear everything on this form?
+    <button type="button" id="clearYes">Clear</button>
+    <button type="button" class="ghost" id="clearNo">Keep</button>
+  </div>
+  <div class="banner" id="updateBanner" hidden>
+    A new version of Rep Forms is ready.
+    <button type="button" id="updateBtn">Update now</button>
+  </div>
+</div>
+
+<main class="wrap"><div class="sheet" id="sheet"></div></main>
+
+<script src="forms.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const field = (ph, lines = 1) =>
+  `<div class="f" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(ph)}" data-ph="" style="min-height:${(lines*1.45).toFixed(2)}em"></div>`;
+let dirty = false;
+
+function render(form) {
+  const hdr = form.header.map(r => `<tr>${r.map(l => `<td class="l">${esc(l)}</td><td class="v">${field(l)}</td>`).join('')}</tr>`).join('');
+  const secs = form.sections.map(s => {
+    const rows = s.rows.map(r => {
+      let body = '';
+      if (r.type === 'checks') {
+        body = `<div class="checks">${r.options.map(o => `<label><input type="checkbox"> ${esc(o)}</label>`).join('')}</div>`
+             + (r.other ? `<div class="other">Other: ${field('Other')}</div>` : '')
+             + field(r.label, Math.max(1, (r.lines||2) - 1));
+      } else body = field(r.label, r.lines || 2);
+      const hints = r.hints ? `<div class="hints">${r.hints.map(esc).join('<br>')}</div>` : '';
+      const single = s.rows.length === 1 && r.label === s.title;
+      return single ? `<tr><td class="v" colspan="2">${body}</td></tr>`
+                    : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v">${body}</td></tr>`;
+    }).join('');
+    const band = `<tr class="band"><td colspan="2"><b>${s.num ? s.num + '. ' : ''}${esc(s.title)}</b><span>${esc(s.sub||'')}</span></td></tr>`;
+    return `<table class="sec"><colgroup><col style="width:33%"><col></colgroup>${band}${rows}</table>`;
+  }).join('');
+  $('#sheet').innerHTML =
+    `<div class="s-head"><h2>${esc(form.title)}</h2>${form.org ? `<div class="org">${esc(form.org)}</div>` : ''}</div>
+     <table class="hdr"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col style="width:32%"></colgroup>${hdr}</table>${secs}`;
+  document.title = form.title + ' – Rep Forms';
+  dirty = false;
+}
+
+// paste as plain text only
+document.addEventListener('paste', e => {
+  if (!e.target.closest('[contenteditable]')) return;
+  e.preventDefault();
+  document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text'));
+});
+$('#sheet').addEventListener('input', () => dirty = true);
+
+const sel = $('#formSel');
+sel.innerHTML = FORMS.map(f => `<option value="${esc(f.id)}">${esc(f.title)}</option>`).join('');
+const pick = () => render(FORMS.find(f => f.id === sel.value) || FORMS[0]);
+let lastPick = sel.value;
+sel.addEventListener('change', () => {
+  if (dirty && !confirm('Switching forms clears what you have typed. Continue?')) { sel.value = lastPick; return; }
+  lastPick = sel.value; pick();
+});
+const hashForm = location.hash.slice(1);
+if (FORMS.some(f => f.id === hashForm)) sel.value = lastPick = hashForm;
+pick();
+
+$('#print').onclick = () => window.print();
+$('#clear').onclick = () => { $('#confirmClear').hidden = false; $('#clearYes').focus(); };
+$('#clearNo').onclick = () => $('#confirmClear').hidden = true;
+$('#clearYes').onclick = () => { $('#confirmClear').hidden = true; pick(); };
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+// ── offline + opt-in updates ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const offer = w => {
+      $('#updateBanner').hidden = false;
+      $('#updateBtn').onclick = () => {
+        if (dirty && !confirm('Updating reloads the app and clears this form. Continue?')) return;
+        w.postMessage('SKIP_WAITING');
+      };
+    };
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w);
+      });
+    });
+    // check for a new version whenever the app is opened while online
+    if (navigator.onLine) reg.update().catch(() => {});
+  });
+  // reload only when switching from an old version, not on first install
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return; reloading = true; dirty = false; location.reload();
+  });
+  navigator.serviceWorker.addEventListener('message', e => { if (e.data?.version) $('#ver').textContent = e.data.version; });
+  navigator.serviceWorker.ready.then(r => r.active?.postMessage('GET_VERSION'));
+}
+</script>
+</body>
+</html>
