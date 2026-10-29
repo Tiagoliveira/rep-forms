@@ -128,6 +128,22 @@ textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
 .callout{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;font-size:15px}
 .callout.final{border:2px solid var(--fg);font-weight:600}
 
+/* table entries + sketch (screen) */
+.entries{display:flex;flex-direction:column;gap:10px;padding-top:12px}
+.entry{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface-2)}
+.entry h4{margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.egrid .fld{padding-top:0;gap:4px}
+.egrid .fld label{font-size:13px;font-weight:600}
+.egrid .inp{min-height:42px;padding:9px 10px;background:var(--surface)}
+select.inp{appearance:auto}
+.addrow{align-self:flex-start;background:transparent;color:var(--accent);border:1.5px dashed var(--accent);font-weight:600}
+.totals{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:14px}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums;margin-right:4px}
+.sketchnote{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:14px;padding-top:12px}
+.sketchnote .pad{width:64px;height:48px;flex:none;border:1.5px dashed var(--line-strong);border-radius:8px;background-image:radial-gradient(var(--line-strong) 1px,transparent 1px);background-size:8px 8px}
+
 /* preview wrapper */
 .preview{overflow-x:auto;padding-bottom:8px}
 .preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
@@ -150,6 +166,8 @@ textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
 .sheet .band b{font-size:11pt;text-transform:uppercase;margin-right:8px}
 .sheet .band span{font-size:8.5pt}
 .sheet tr{break-inside:avoid}
+.sheet tr.band{break-after:avoid}
+.sheet table.keep{break-inside:avoid}
 .sheet .hints{font-weight:400;font-style:italic;margin-top:8px;line-height:1.35}
 .sheet .opts{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:8.5pt;margin-bottom:3px}
 .sheet .box{display:inline-block;width:9px;height:9px;border:1px solid #333;margin-right:4px;vertical-align:-1px;position:relative}
@@ -166,6 +184,13 @@ textarea.inp{resize:none;overflow:hidden;line-height:1.5;display:block}
 .sheet td.t{background:var(--field)}
 .sheet td.intro{background:var(--field);font-size:9pt}
 .sheet td.fin{background:#fff;border:1.5px solid #222;font-weight:700;font-size:10.5pt;padding:6px 8px}
+.sheet td.full{background:var(--field);padding:0}
+.sheet table.grid{margin:0}
+.sheet table.grid th{background:var(--label);font-size:8.5pt;text-align:left;padding:3px 5px;border:1px solid var(--rule);font-weight:700}
+.sheet table.grid td{height:6.2mm;padding:2px 5px;font-size:9pt;background:var(--field)}
+.sheet table.grid td.n{text-align:right;font-variant-numeric:tabular-nums}
+.sheet table.grid tr.tot td{background:var(--label);font-weight:700}
+.sheet td.full.sketch{background-color:#fff;background-image:radial-gradient(#b9c6ce 0.6px,transparent 0.7px);background-size:5mm 5mm}
 .printroot{display:none}
 
 @media print{
@@ -266,6 +291,15 @@ $('#shelf').innerHTML = FORMS.map(f => `
 const isDate = l => /^date\b/i.test(l);
 const fmtDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : (v || ''); };
 const isSingleNotes = (s, r) => s.rows.length === 1 && r.label === s.title;
+const tCount = (k, r) => Math.max(1, Math.min(r.rows || 8, +state[k + 'n'] || Math.min(3, r.rows || 8)));
+const numVal = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+function tableTotals(k, r, upto) {
+  const sums = {};
+  r.columns.forEach((c, ci) => { if (c.sum) { sums[ci] = 0; for (let i = 0; i < upto; i++) sums[ci] += numVal(state[`${k}_${i}_${ci}`]); } });
+  let density = null;
+  if (r.density) { const [m, t] = r.density; density = sums[t] ? Math.round(sums[m] / sums[t] * 100) : null; }
+  return {sums, density};
+}
 function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
 
 /* ── screen: app-style form ── */
@@ -293,12 +327,27 @@ function renderFill(form) {
     return `<div class="fld"><label for="${id}">${esc(l)}</label>
       <input class="inp" id="${id}" data-k="${id}" type="${isDate(l) ? 'date' : 'text'}" autocomplete="off"></div>`;
   }).join('');
-  let html = `<section class="panel"><div class="phead"><div><h3>Case details</h3></div></div><div class="pbody"><div class="grid2">${hdr}</div></div></section>`;
+  let html = `<section class="panel"><div class="phead"><div><h3>${esc(form.headerTitle || 'Case details')}</h3></div></div><div class="pbody"><div class="grid2">${hdr}</div></div></section>`;
   form.sections.forEach((s, si) => {
     const rows = s.rows.map((r, ri) => {
       const k = `s${si}r${ri}`;
       const rowsAttr = Math.max(2, Math.min(r.lines || 2, 10));
       const ta = `<textarea class="inp" id="${k}" data-k="${k}" rows="${rowsAttr}" placeholder="${r.type === 'checks' ? 'References and notes' : 'Type here…'}"></textarea>`;
+      if (r.type === 'table') {
+        const n = tCount(k, r);
+        const entries = Array.from({length: n}, (_, i) => `<div class="entry"><h4>${esc(r.item || 'Row')} ${i + 1}</h4><div class="egrid">${
+          r.columns.map((c, ci) => {
+            const id = `${k}_${i}_${ci}`;
+            const ctl = c.type === 'yn'
+              ? `<select class="inp" id="${id}" data-k="${id}"><option value=""></option><option>Yes</option><option>No</option><option>Unsure</option></select>`
+              : `<input class="inp" id="${id}" data-k="${id}" ${c.type === 'num' ? 'type="number" inputmode="numeric" min="0"' : 'type="text"'} autocomplete="off">`;
+            return `<div class="fld"><label for="${id}">${esc(c.name)}</label>${ctl}</div>`;
+          }).join('')}</div></div>`).join('');
+        const add = n < (r.rows || 8) ? `<button type="button" class="addrow" data-add="${k}" data-n="${n}">+ Add ${esc((r.item || 'row').toLowerCase())}</button>` : '';
+        const tot = r.columns.some(c => c.sum) ? `<div class="totals" data-tot="${k}" data-si="${si}" data-ri="${ri}"></div>` : '';
+        return `<div class="entries">${entries}${add}${tot}</div>`;
+      }
+      if (r.type === 'sketch') return `<div class="sketchnote"><span class="pad"></span><span>The printout leaves a dotted box here to sketch the layout by hand: departments, entrances, break room, notice board.</span></div>`;
       if (r.type === 'checks') {
         const chips = r.options.map((o, oi) => `<label class="chip"><input type="checkbox" data-k="${k}o${oi}"><span class="tick"></span>${esc(o)}</label>`).join('');
         const other = r.other ? `<input class="inp" data-k="${k}x" aria-label="Other document" placeholder="Other document…">` : '';
@@ -316,15 +365,32 @@ function renderFill(form) {
     if (el.type === 'checkbox') el.checked = !!v; else if (v != null) el.value = v;
     if (el.tagName === 'TEXTAREA') grow(el);
   });
+  updateTotals(form);
+}
+function updateTotals(form = FORMS.find(f => f.id === current)) {
+  document.querySelectorAll('#fill [data-tot]').forEach(el => {
+    const r = form.sections[+el.dataset.si].rows[+el.dataset.ri], k = el.dataset.tot;
+    const {sums, density} = tableTotals(k, r, r.rows || 8);
+    el.innerHTML = Object.entries(sums).map(([ci, v]) => `<span class="stat"><b>${v}</b>${esc(r.columns[ci].name.toLowerCase())}</span>`).join('')
+      + (r.density ? `<span class="stat"><b>${density == null ? '–' : density + '%'}</b>membership density</span>` : '');
+  });
 }
 $('#fill').addEventListener('input', e => {
   const el = e.target; if (!el.dataset.k) return;
   state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.tagName === 'TEXTAREA') grow(el);
   if (el.type === 'checkbox') updateProgress();
+  if (el.type === 'number') updateTotals();
   dirty = true;
 });
 $('#fill').addEventListener('click', e => {
+  const a = e.target.closest('.addrow');
+  if (a) {
+    const k = a.dataset.add, n = +a.dataset.n; state[k + 'n'] = n + 1;
+    const y = window.scrollY; renderFill(FORMS.find(f => f.id === current)); window.scrollTo({top: y});
+    document.getElementById(`${k}_${n}_0`)?.focus({preventScroll: false});
+    return;
+  }
   const b = e.target.closest('.hintbtn'); if (!b) return;
   const t = document.getElementById(b.dataset.for);
   const pre = t.value && !t.value.endsWith('\n') ? '\n' : '';
@@ -359,6 +425,19 @@ function renderSheet(form) {
     const rows = s.rows.map((r, ri) => {
       const k = `s${si}r${ri}`, h = `min-height:${((r.lines || 2) * lineH + 2).toFixed(1)}mm`;
       let body;
+      if (r.type === 'table') {
+        const used = Array.from({length: r.rows || 8}, (_, i) => r.columns.some((c, ci) => state[`${k}_${i}_${ci}`])).lastIndexOf(true) + 1;
+        const n = Math.max(r.rows || 8, used);
+        const head = `<tr>${r.columns.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr>`;
+        const body = Array.from({length: n}, (_, i) => `<tr>${r.columns.map((c, ci) => `<td class="${c.type === 'num' ? 'n' : ''}">${v(`${k}_${i}_${ci}`)}</td>`).join('')}</tr>`).join('');
+        let tot = '';
+        if (r.columns.some(c => c.sum)) {
+          const {sums, density} = tableTotals(k, r, n), any = used > 0;
+          tot = `<tr class="tot">${r.columns.map((c, ci) => `<td class="${c.sum ? 'n' : ''}">${ci === 0 ? 'Total' + (r.density ? ` · density ${any && density != null ? density + '%' : '____%'}` : '') : (c.sum && any ? sums[ci] : '')}</td>`).join('')}</tr>`;
+        }
+        return `<tr><td class="full" colspan="2"><table class="grid"><colgroup>${r.columns.map(c => `<col style="width:${c.w || 15}%">`).join('')}</colgroup>${head}${body}${tot}</table></td></tr>`;
+      }
+      if (r.type === 'sketch') return `<tr><td class="full sketch" colspan="2"><div style="height:${r.height || 70}mm"></div></td></tr>`;
       if (r.type === 'checks') {
         body = `<div class="opts">${r.options.map((o, oi) => `<span><span class="box${state[`${k}o${oi}`] ? ' on' : ''}"></span>${esc(o)}</span>`).join('')}${
           r.other ? `<span class="oth"><span class="box${state[k + 'x'] ? ' on' : ''}"></span>Other: <u>${v(k + 'x')}</u></span>` : ''}</div><div class="val">${v(k)}</div>`;
@@ -369,7 +448,8 @@ function renderSheet(form) {
         : `<tr><td class="l">${esc(r.label)}${hints}</td><td class="v"><div style="${h}">${body}</div></td></tr>`;
     }).join('');
     const band = `<tr class="band"><td colspan="2"><b>${s.num ? s.num + '. ' : ''}${esc(s.title)}</b><span>${esc(s.sub || '')}</span></td></tr>`;
-    return `<table class="sec"><colgroup><col style="width:28%"><col></colgroup>${band}${rows}</table>`;
+    const keep = s.rows.some(r => r.type === 'sketch') ? ' keep' : '';
+    return `<table class="sec${keep}"><colgroup><col style="width:28%"><col></colgroup>${band}${rows}</table>`;
   }).join('');
   const logo = form.org ? `<div class="logo"><span><b>${esc(form.org.split(' ')[0])}</b><small>${esc(form.org.split(' ').slice(1).join(' '))}</small></span></div>` : '';
   return `<div class="sheet"><div class="s-head"><h2>${esc(form.title)}</h2>${logo}</div>

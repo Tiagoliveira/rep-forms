@@ -12,6 +12,11 @@
 //  Checklists use kind:'checklist' and sections with `items` (plain
 //  strings) instead of `rows`. Optional: `intro` {label, text} shown
 //  above the first section, and `final` – a bold closing line.
+//
+//  More row types:
+//    { label, type:'table', item, rows, columns:[{name, w, type?:'num'|'yn', sum?}], density?:[membersCol, staffCol] }
+//    { label, type:'sketch', height }   – dotted box on the printout for drawing by hand
+//  `headerTitle` renames the "Case details" panel on screen.
 // ─────────────────────────────────────────────────────────────
 window.FORMS = [
   {
@@ -120,6 +125,52 @@ window.FORMS = [
       { num: 5, title: 'After the meeting', sub: 'Protect the record and follow up', items: [
         'Check the notes carefully. Request corrections or provide written comments. Signing should confirm the record only, not agreement with the outcome.',
         'Review the written decision against every grievance point, note the appeal deadline, agree next steps, monitor any poor treatment for raising the grievance, preserve confidentiality and seek advice where needed.',
+      ]},
+    ],
+  },
+  {
+    id: 'workplace-map',
+    title: 'Mapping the Workplace',
+    org: '',
+    description: 'Departments, shifts, members and key people, plus a floor plan sketch and organising plan.',
+    headerTitle: 'Workplace details',
+    header: [
+      ['Workplace / store', 'Date mapped'],
+      ['Mapped by', 'Area organiser'],
+    ],
+    sections: [
+      { num: 1, title: 'Overview', sub: 'How the workplace runs', rows: [
+        { label: 'Opening hours and shift patterns', lines: 2 },
+        { label: 'Management structure – who makes which decisions', lines: 2 },
+        { label: 'Notice boards, break areas and best times to talk to staff', lines: 2 },
+      ]},
+      { num: 2, title: 'Departments', sub: 'Who works where and current membership', rows: [
+        { label: 'Departments', type: 'table', item: 'Department', rows: 8, density: [3, 2], columns: [
+          { name: 'Department / area', w: 22 },
+          { name: 'Shifts', w: 14 },
+          { name: 'Staff', type: 'num', sum: true, w: 8 },
+          { name: 'Members', type: 'num', sum: true, w: 10 },
+          { name: 'Rep / contact', w: 18 },
+          { name: 'Main issues', w: 28 },
+        ]},
+      ]},
+      { num: 3, title: 'Key people', sub: 'Reps, activists and people others listen to', rows: [
+        { label: 'People', type: 'table', item: 'Person', rows: 8, columns: [
+          { name: 'Name', w: 20 },
+          { name: 'Department', w: 16 },
+          { name: 'Shift', w: 12 },
+          { name: 'Member?', type: 'yn', w: 10 },
+          { name: 'Role / influence', w: 18 },
+          { name: 'Notes', w: 24 },
+        ]},
+      ]},
+      { num: 4, title: 'Floor plan', sub: 'Sketch departments, entrances, break room and notice board', rows: [
+        { label: 'Floor plan', type: 'sketch', height: 75 },
+      ]},
+      { num: 5, title: 'Organising plan', sub: 'What happens next', rows: [
+        { label: 'Top issues raised by staff', lines: 2 },
+        { label: 'Departments or shifts with low membership', lines: 2 },
+        { label: 'Actions, who will do them and by when', lines: 3 },
       ]},
     ],
   },
