@@ -189,7 +189,7 @@ window.FORMS = [
     header: [],
     sections: [
       { title: 'Colleagues', sub: 'Who to approach and when they’re in', rows: [
-        { label: 'Colleagues', type: 'table', item: 'Colleague', rows: 40, start: 1, printRows: 8, rowHeight: 19.5, columns: [
+        { label: 'Colleagues', type: 'table', item: 'Colleague', rows: 40, start: 1, printRows: 8, rowHeight: 18, columns: [
           { name: 'Colleague name', w: 19 },
           { name: 'Mon', group: 'Shift/Times', w: 7.5 },
           { name: 'Tues', group: 'Shift/Times', w: 7.5 },
