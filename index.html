@@ -35,7 +35,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 
 /* top bar */
 .bar{position:sticky;top:0;z-index:5;background:var(--bar);color:var(--bar-fg);padding-top:env(safe-area-inset-top,0px);box-shadow:0 1px 0 #0003}
-.bar-in{display:flex;align-items:center;gap:6px;min-height:56px;max-width:1000px;margin:0 auto}
+.bar-in{display:flex;align-items:center;gap:6px;min-height:56px;max-width:1240px;margin:0 auto}
 .bar h1{font-size:18px;margin:0;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .ver{font-size:12px;opacity:.55;font-weight:400;margin-left:6px}
 .ib{background:transparent;color:var(--bar-fg);display:inline-flex;align-items:center;gap:6px;padding:8px 10px}
@@ -45,10 +45,11 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 @media (max-width:560px){.lbl{display:none}.pri{padding:10px 12px}}
 
 /* home */
-.home{max-width:1000px;margin:0 auto;padding-block:28px 56px}
+.home{max-width:1240px;margin:0 auto;padding-block:28px 56px}
 .home h2{font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
 .lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
 .shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+@media (min-width:1100px){.shelf{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:22px}.home h2{font-size:32px}}
 .card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .card:hover{transform:translateY(-2px);box-shadow:0 10px 28px #0000001f}
 .thumb{background:var(--accent-soft);padding:18px 22px 0;height:150px;overflow:hidden}
@@ -69,7 +70,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px
 .privacy svg{width:20px;height:20px;flex:none;margin-top:1px}
 
 /* banners */
-.banners{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.banners{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .banners:has(.banner:not([hidden])){padding-top:12px}
 .banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 14px}
 .banner span{flex:1 1 200px}
@@ -151,6 +152,17 @@ select.inp{appearance:auto}
 .pzbar span{font-size:13px;color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
 .preview{touch-action:pan-x pan-y;overflow:auto;overscroll-behavior:contain;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;height:70vh}
 .preview .sheet{margin:0 auto}
+/* wide screens: form on the left, live print preview on the right */
+html.wide.onform .bar-in,html.wide.onform .banners{max-width:1600px}
+html.wide .formview{max-width:1600px;display:grid;grid-template-columns:minmax(440px,620px) minmax(0,1fr);gap:0 28px;align-items:start}
+html.wide .formview{padding-bottom:16px}
+html.wide .ftop{grid-column:1;grid-row:1}
+html.wide .seg{display:none}
+html.wide #fill{grid-column:1;grid-row:2}
+html.wide #previewWrap{grid-column:2;grid-row:1/span 2;position:sticky;top:72px}
+html.wide #fill[hidden],html.wide #previewWrap[hidden]{display:flex!important}
+html.wide #previewWrap[hidden]{display:block!important}
+html.wide .pzbar::before{content:"Print preview";font-weight:650;font-size:15px;margin-right:auto;color:var(--fg)}
 html.previewing,html.previewing body{overflow:hidden;overscroll-behavior:none}
 html.previewing .formview{padding-bottom:0}
 .preview .sheet{box-shadow:0 1px 3px #0002,0 10px 30px #0000001a;border-radius:3px}
@@ -422,6 +434,7 @@ function updateTotals(form = FORMS.find(f => f.id === current)) {
 }
 $('#fill').addEventListener('input', e => {
   const el = e.target; if (!el.dataset.k) return;
+  livePreview();
   state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
   if (el.tagName === 'TEXTAREA') grow(el);
   if (el.type === 'checkbox') updateProgress();
@@ -432,7 +445,7 @@ $('#fill').addEventListener('input', e => {
 $('#fill').addEventListener('click', e => {
   const a = e.target.closest('.addrow');
   if (a) {
-    const k = a.dataset.add, n = +a.dataset.n; state[k + 'n'] = n + 1;
+    const k = a.dataset.add, n = +a.dataset.n; state[k + 'n'] = n + 1; livePreview();
     const y = window.scrollY; renderFill(FORMS.find(f => f.id === current)); window.scrollTo({top: y});
     document.getElementById(`${k}_${n}_0`)?.focus({preventScroll: false});
     return;
@@ -529,7 +542,34 @@ function setPageSize(f) {
 const refreshPrint = () => { const f = FORMS.find(f => f.id === current); setPageSize(f); if (f) $('#printroot').innerHTML = renderSheet(f); };
 window.addEventListener('beforeprint', refreshPrint);
 
+const wideMQ = window.matchMedia('(min-width: 1100px)');
+const isWide = () => wideMQ.matches;
+const fineMQ = window.matchMedia('(pointer: fine)');
+let livePending = 0;
+function livePreview() {
+  if (!isWide() || !current) return;
+  clearTimeout(livePending);
+  livePending = setTimeout(() => {
+    const box = $('#preview'), sl = box.scrollLeft, st = box.scrollTop;
+    box.innerHTML = renderSheet(FORMS.find(f => f.id === current));
+    const sh = $('#preview .sheet'); if (sh) sh.style.zoom = fitZ * pz;
+    box.scrollLeft = sl; box.scrollTop = st;
+  }, 120);
+}
+function applyWide() {
+  document.documentElement.classList.toggle('wide', isWide());
+  if (current) setView(false);
+}
+wideMQ.addEventListener('change', applyWide);
 function setView(prev) {
+  if (isWide()) {
+    document.documentElement.classList.remove('previewing');
+    $('#fill').hidden = false; $('#previewWrap').hidden = false;
+    $('#preview').innerHTML = renderSheet(FORMS.find(f => f.id === current));
+    $('#fill').querySelectorAll('textarea').forEach(grow);
+    requestAnimationFrame(fitPreview);
+    return;
+  }
   $('#vFill').setAttribute('aria-pressed', !prev); $('#vPrev').setAttribute('aria-pressed', prev);
   $('#fill').hidden = prev; $('#previewWrap').hidden = !prev; pz = 1;
   document.documentElement.classList.toggle('previewing', prev);
@@ -541,7 +581,8 @@ let pz = 1, fitZ = 1;
 function fitPreview() {
   const sh = $('#preview .sheet'), box = $('#preview'); if (!sh) return;
   // the window fills the screen below its own top edge, so the page never needs to scroll
-  box.style.height = Math.max(260, window.innerHeight - box.getBoundingClientRect().top - 16) + 'px';
+  const top = isWide() ? 72 + $('.pzbar').offsetHeight + 10 : box.getBoundingClientRect().top;
+  box.style.height = Math.max(260, window.innerHeight - top - 16) + 'px';
   sh.style.zoom = 1; fitZ = Math.min(1, (box.clientWidth - 24) / sh.offsetWidth); applyZoom();
 }
 function applyZoom(cx, cy) {
@@ -554,7 +595,7 @@ function applyZoom(cx, cy) {
     const x = cx - r.left; box.scrollLeft = (box.scrollLeft + x) * k - x;
     const y = cy - r.top; box.scrollTop = (box.scrollTop + y) * k - y;
   }
-  $('#pzLabel').textContent = pz === 1 ? 'Pinch the page to zoom' : Math.round(pz * 100) + '%';
+  $('#pzLabel').textContent = pz === 1 ? (fineMQ.matches ? 'Ctrl + scroll to zoom' : 'Pinch the page to zoom') : Math.round(pz * 100) + '%';
 }
 $('#pzIn').onclick = () => { pz *= 1.4; applyZoom(); };
 $('#pzOut').onclick = () => { pz /= 1.4; applyZoom(); };
@@ -579,12 +620,14 @@ $('#vFill').onclick = () => setView(false);
 $('#vPrev').onclick = () => setView(true);
 
 /* ── routing ── */
+document.documentElement.classList.toggle('wide', isWide());
 function show() {
   const form = FORMS.find(f => f.id === location.hash.slice(1));
   $('#home').hidden = !!form; $('#formview').hidden = !form;
   ['#back', '#clear', '#print'].forEach(s => $(s).hidden = !form);
   $('#confirmBox').hidden = true;
   if (!form) document.documentElement.classList.remove('previewing');
+  document.documentElement.classList.toggle('onform', !!form);
   if (form) {
     if (current !== form.id) { state = {}; dirty = false; current = form.id; renderFill(form); setView(false); }
     setPageSize(form);
